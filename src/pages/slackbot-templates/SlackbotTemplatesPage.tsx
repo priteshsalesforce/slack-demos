@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
   getAllTemplates,
   getTemplateComponent,
   type SlackResponseTemplate,
 } from '@/extensions/slackResponseTemplateRegistry'
-import { PrimaryLinkLarge, SecondaryLinkLarge } from '@/components/ui/DesignSystemButtons'
 
 export function SlackbotTemplatesPage() {
   const [templates, setTemplates] = useState<SlackResponseTemplate[]>([])
@@ -18,12 +18,28 @@ export function SlackbotTemplatesPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={pageStyle}>
-      <header className="px-6 lg:px-12 py-6 border-b" style={{ borderColor: 'var(--slack-border)', backgroundColor: 'var(--slack-pane-bg)' }}>
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4 justify-center sm:justify-start flex-wrap items-center">
-          <SecondaryLinkLarge to="/">Home</SecondaryLinkLarge>
-          <PrimaryLinkLarge to="/canvas">Create new story</PrimaryLinkLarge>
-          <SecondaryLinkLarge to="/reference">Instructions</SecondaryLinkLarge>
-        </div>
+      <header
+        className="flex-shrink-0 px-6 py-4 border-b flex items-center justify-between"
+        style={{ backgroundColor: 'var(--slack-pane-bg)', borderColor: 'var(--slack-border)' }}
+      >
+        <Link
+          to="/"
+          className="font-semibold text-[15px] hover:underline focus:outline-none focus:underline"
+          style={{ color: 'var(--slack-text)' }}
+        >
+          ← Back
+        </Link>
+        <Link
+          to="/design-system"
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded text-sm font-semibold border transition hover:bg-[var(--slack-btn-hover-bg)]"
+          style={{
+            backgroundColor: 'var(--slack-btn-bg)',
+            color: 'var(--slack-text)',
+            borderColor: 'var(--slack-btn-secondary-border)',
+          }}
+        >
+          Design system
+        </Link>
       </header>
       <main className="flex-1 max-w-4xl mx-auto w-full py-6 px-6">
         <h1 className="font-black text-xl mb-6" style={{ ...textStyle, fontSize: '60px', paddingTop: 0, paddingBottom: 0 }}>

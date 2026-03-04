@@ -13,6 +13,28 @@ export function ReferencePage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={pageStyle}>
+      <header
+        className="flex-shrink-0 px-6 py-4 border-b flex items-center justify-between"
+        style={{ backgroundColor: 'var(--slack-pane-bg)', borderColor: 'var(--slack-border)' }}
+      >
+        <Link
+          to="/"
+          className="font-semibold text-[15px] hover:underline focus:outline-none focus:underline"
+          style={{ color: 'var(--slack-text)' }}
+        >
+          ← Back
+        </Link>
+        <Link
+          to="/canvas"
+          className="px-3 py-1.5 rounded text-sm font-medium transition hover:opacity-90"
+          style={{
+            backgroundColor: 'var(--slack-btn-default-bg)',
+            color: 'var(--slack-btn-default-text)',
+          }}
+        >
+          Create new story
+        </Link>
+      </header>
       <div className="flex-1 p-6 max-w-3xl mx-auto w-full space-y-10">
         <div className="max-w-3xl mx-auto">
           <h1 className="font-black text-6xl mb-2" style={textStyle}>

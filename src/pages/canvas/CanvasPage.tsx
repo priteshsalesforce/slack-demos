@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { DEFAULT_DEMO_INSTRUCTIONS } from '@/constants/demoInstructions'
 
 const STORAGE_KEYS = {
@@ -12,8 +13,12 @@ Example:
 
 Alex is an employee who needs to request paternity leave. He opens a direct message with Slackbot and says he wants to apply. Slackbot explains the policy: 2 weeks paid, manager approval required. Alex clicks a button to choose his dates and selects March 15–22. His manager Sarah receives a notification in her DM and approves the request. Alex gets a confirmation message that his leave is approved.`
 
+type CanvasLocationState = { initialStory?: string; demoId?: string; demoTitle?: string } | null
+
 export function CanvasPage() {
-  const [story, setStory] = useState('')
+  const location = useLocation()
+  const state = location.state as CanvasLocationState
+  const [story, setStory] = useState(() => (state?.initialStory != null ? state.initialStory : ''))
   const [copied, setCopied] = useState(false)
   const [createdBy, setCreatedBy] = useState(() => {
     try {
@@ -103,6 +108,14 @@ export function CanvasPage() {
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-3xl mx-auto w-full">
+        {state?.demoTitle && (
+          <div
+            className="mb-4 p-3 rounded-lg text-sm"
+            style={{ backgroundColor: 'var(--slack-msg-hover)', color: 'var(--slack-text)' }}
+          >
+            <strong>Editing story for:</strong> {state.demoTitle}. Update the story below, then click <strong>Copy Demo Prompt</strong> and paste in Cursor to regenerate the demo files.
+          </div>
+        )}
         <p className="text-sm mb-4" style={{ color: 'var(--slack-msg-muted)' }}>
           Write your story in paragraphs. Describe what happens—who does what, what they say, how the conversation flows. Set <strong>Created by</strong>, edit instructions (and Slack persona) if needed, then click Copy Demo Prompt and paste in Cursor to create the Slack demo.
         </p>

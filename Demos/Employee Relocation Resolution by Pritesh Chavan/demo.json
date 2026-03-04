@@ -190,7 +190,9 @@
       "content": {
         "actor": "app",
         "personaId": "slackbot",
-        "text": "Global Movers has been notified. They've scheduled a virtual home survey for Julia on Thursday, March 6th at 2pm GMT. Should I add this to Julia's calendar and invite her manager Sarah Chen?"
+        "templateId": "text_with_buttons",
+        "text": "Global Movers has been notified. They've scheduled a virtual home survey for Julia on Thursday, March 6th at 2pm GMT. Should I add this to Julia's calendar and invite her manager Sarah Chen?",
+        "choices": ["Yes, add to calendars", "Change time"]
       }
     },
     {
@@ -237,7 +239,9 @@
       "content": {
         "actor": "app",
         "personaId": "slackbot",
-        "text": "I've opened Immigration Case #VISA-NY-882 with our external law firm (Fragomen). I've automatically uploaded Julia's passport copy and employment records from Workday. Next action: Julia must complete Form DS-160. Should I send her the link with instructions? [ Send instructions to Julia ] [ Wait for lawyer review ]"
+        "templateId": "text_with_buttons",
+        "text": "I've opened Immigration Case #VISA-NY-882 with our external law firm (Fragomen). I've automatically uploaded Julia's passport copy and employment records from Workday. Next action: Julia must complete Form DS-160. Should I send her the link with instructions?",
+        "choices": ["Send instructions to Julia", "Wait for lawyer review"]
       }
     },
     {
@@ -285,7 +289,9 @@
       "content": {
         "actor": "app",
         "personaId": "slackbot",
-        "text": "Julia has acknowledged the visa instructions. Moving forward with Steps 6–8... Steps 6–8 completed (temporary housing, COLA, lump sum). Jason, I've drafted Julia's full relocation package. Ready for your review and approval. [ Review Offer Package ]"
+        "templateId": "text_with_buttons",
+        "text": "Julia has acknowledged the visa instructions. Moving forward with Steps 6–8... Steps 6–8 completed (temporary housing, COLA, lump sum). Jason, I've drafted Julia's full relocation package. Ready for your review and approval.",
+        "choices": ["Review Offer Package"]
       }
     },
     {
@@ -375,7 +381,9 @@
       "content": {
         "actor": "app",
         "personaId": "slackbot",
-        "text": "Knowledge Nudge: 5th London → New York relocation this month with L-1. Visa processing times have increased from 3 weeks to 4–6 weeks. Should I update the knowledge article 'UK to US Visa Processing Times (2026)' to reflect this trend? [ Yes, Update Article ] [ Dismiss ]"
+        "templateId": "text_with_buttons",
+        "text": "Knowledge Nudge: 5th London → New York relocation this month with L-1. Visa processing times have increased from 3 weeks to 4–6 weeks. Should I update the knowledge article 'UK to US Visa Processing Times (2026)' to reflect this trend?",
+        "choices": ["Yes, Update Article", "Dismiss"]
       }
     },
     {

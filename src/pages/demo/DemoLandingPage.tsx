@@ -1,11 +1,15 @@
-import { Link, useParams } from 'react-router-dom'
-import { getStory, getPersonaConfigs } from '@/stories'
+import { Link, useParams, useNavigate } from 'react-router-dom'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { getStory, getPersonaConfigs, getStoryMarkdown } from '@/stories'
 import type { Persona } from '@/types'
 
 export function DemoLandingPage() {
   const { storyId } = useParams<{ storyId: string }>()
+  const navigate = useNavigate()
   const story = storyId ? getStory(storyId) : undefined
   const personaConfigs = storyId ? getPersonaConfigs(storyId) : []
+  const storyMarkdown = storyId ? getStoryMarkdown(storyId) : undefined
 
   if (!story) {
     return (
@@ -19,47 +23,81 @@ export function DemoLandingPage() {
   const userPersonas = story.personas.filter((p) => p.type === 'user')
   const configsByPersona = new Map(personaConfigs.map((c) => [c.personaId, c]))
 
+  const goToEditAndRegenerate = () => {
+    navigate('/canvas', {
+      state: { initialStory: storyMarkdown ?? '', demoId: story.id, demoTitle: story.title },
+    })
+  }
+
   return (
     <div
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: 'var(--slack-main-bg)' }}
     >
       <header
-        className="flex-shrink-0 px-6 py-6 border-b"
+        className="flex-shrink-0 px-6 py-4 border-b flex items-center justify-between"
         style={{ backgroundColor: 'var(--slack-pane-bg)', borderColor: 'var(--slack-border)' }}
       >
         <Link
           to="/"
-          className="text-sm font-medium mb-4 inline-block"
-          style={{ color: 'var(--slack-msg-muted)' }}
+          className="font-semibold text-[15px] hover:underline focus:outline-none focus:underline"
+          style={{ color: 'var(--slack-text)' }}
         >
-          ← Back to demos
+          ← Back
         </Link>
-        <h1 className="font-bold text-[22px]" style={{ color: 'var(--slack-text)' }}>
-          {story.title}
-        </h1>
-        <p className="text-[14px] mt-1" style={{ color: 'var(--slack-msg-muted)' }}>
-          by {story.createdBy} • {story.workspaceName ?? 'Acme Inc'}
-        </p>
+        <button
+          type="button"
+          onClick={goToEditAndRegenerate}
+          className="px-3 py-1.5 rounded text-sm font-medium transition hover:opacity-90"
+          style={{
+            backgroundColor: 'var(--slack-btn-default-bg)',
+            color: 'var(--slack-btn-default-text)',
+          }}
+        >
+          Edit story
+        </button>
       </header>
 
-      <main className="flex-1 p-6">
-        <p className="text-[14px] mb-6" style={{ color: 'var(--slack-msg-muted)' }}>
-          Choose a persona to experience this demo from their perspective:
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl">
-          {userPersonas.map((persona) => {
-            const config = configsByPersona.get(persona.id)
-            return (
-              <PersonaCard
-                key={persona.id}
-                persona={persona}
-                config={config}
-                storyId={story.id}
-              />
-            )
-          })}
-        </div>
+      <main className="flex-1 p-6 grid grid-cols-12 gap-6 min-h-0 min-w-0">
+        {/* Story: 8 of 12 columns */}
+        <section
+          className="col-span-12 lg:col-span-8 flex flex-col min-h-0 min-w-0 rounded-lg border overflow-hidden"
+          style={{
+            backgroundColor: 'var(--slack-pane-bg)',
+            borderColor: 'var(--slack-border)',
+          }}
+        >
+          <div
+            className="flex-1 overflow-y-auto px-4 py-4 text-[14px] leading-relaxed [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_p]:my-2 [&_table]:w-full [&_th]:text-left [&_td]:p-2"
+            style={{ color: 'var(--slack-text)' }}
+          >
+            {storyMarkdown ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{storyMarkdown}</ReactMarkdown>
+            ) : (
+              <p style={{ color: 'var(--slack-msg-muted)' }}>No story content for this demo.</p>
+            )}
+          </div>
+        </section>
+
+        {/* Personas: 4 of 12 columns */}
+        <section className="col-span-12 lg:col-span-4 flex flex-col min-h-0 min-w-0 overflow-y-auto">
+          <p className="text-[14px] mb-4" style={{ color: 'var(--slack-msg-muted)' }}>
+            Choose a persona to experience this demo from their perspective:
+          </p>
+          <div className="flex flex-col gap-4">
+            {userPersonas.map((persona) => {
+              const config = configsByPersona.get(persona.id)
+              return (
+                <PersonaCard
+                  key={persona.id}
+                  persona={persona}
+                  config={config}
+                  storyId={story.id}
+                />
+              )
+            })}
+          </div>
+        </section>
       </main>
     </div>
   )

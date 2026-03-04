@@ -1,5 +1,5 @@
+import { Link } from 'react-router-dom'
 import { ChatHeader } from '@/components/chat/ChatHeader'
-import { PrimaryLinkLarge, SecondaryLinkLarge } from '@/components/ui/DesignSystemButtons'
 
 const pageStyle = { backgroundColor: 'var(--slack-msg-hover)' }
 const textStyle = { color: 'var(--slack-text)' }
@@ -40,18 +40,47 @@ function ViewPane({
 export function ViewHeadersDesignPage() {
   return (
     <div className="min-h-screen flex flex-col" style={pageStyle}>
-      <header className="px-6 py-4 border-b flex-shrink-0" style={{ borderColor: 'var(--slack-border)', backgroundColor: 'var(--slack-pane-bg)' }}>
-        <div className="max-w-5xl mx-auto flex flex-wrap gap-4 items-center">
-          <SecondaryLinkLarge to="/">Home</SecondaryLinkLarge>
-          <PrimaryLinkLarge to="/canvas">Create new story</PrimaryLinkLarge>
-          <SecondaryLinkLarge to="/reference">Instructions</SecondaryLinkLarge>
+      <header
+        className="flex-shrink-0 px-6 py-4 border-b flex items-center justify-between"
+        style={{ backgroundColor: 'var(--slack-pane-bg)', borderColor: 'var(--slack-border)' }}
+      >
+        <Link
+          to="/"
+          className="font-semibold text-[15px] hover:underline focus:outline-none focus:underline"
+          style={{ color: 'var(--slack-text)' }}
+        >
+          ← Back
+        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/slackbot-templates"
+            className="inline-flex items-center justify-center px-3 py-1.5 rounded text-sm font-semibold border transition hover:bg-[var(--slack-btn-hover-bg)]"
+            style={{
+              backgroundColor: 'var(--slack-btn-bg)',
+              color: 'var(--slack-text)',
+              borderColor: 'var(--slack-btn-secondary-border)',
+            }}
+          >
+            Slack templates
+          </Link>
+          <Link
+            to="/design-system"
+            className="inline-flex items-center justify-center px-3 py-1.5 rounded text-sm font-semibold border transition hover:bg-[var(--slack-btn-hover-bg)]"
+            style={{
+              backgroundColor: 'var(--slack-btn-bg)',
+              color: 'var(--slack-text)',
+              borderColor: 'var(--slack-btn-secondary-border)',
+            }}
+          >
+            Design system
+          </Link>
         </div>
       </header>
 
       <main className="flex-1 w-full max-w-6xl mx-auto p-6 flex flex-col min-h-[400px]">
         <div className="mb-4 flex-shrink-0">
           <h1 className="font-black text-2xl mb-1" style={textStyle}>
-            View headers: Channel & Thread
+            Headers
           </h1>
           <p className="text-sm mb-1" style={mutedStyle}>
             Channel and Thread views side by side. Edit headers in <code className="px-1 rounded bg-white border text-xs" style={{ borderColor: 'var(--slack-border)' }}>src/components/chat/ChatHeader.tsx</code>—changes apply to all demos. Use Cursor&apos;s point-and-click on the headers to jump to the source.

@@ -100,7 +100,7 @@
     {
       "id": "step-11",
       "type": "surface",
-      "context": { "surface": "dm", "with": "Slackbot" }
+      "context": { "surface": "channel", "channel": "#er-confidential" }
     },
     {
       "id": "step-12",

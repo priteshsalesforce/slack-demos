@@ -50,5 +50,19 @@
       "valueLabel": "Value",
       "defaultTitle": "Case details"
     }
+  },
+  {
+    "id": "connect_oauth_card",
+    "name": "OAuth / connect card",
+    "description": "Intro text plus a Block Kit–style card with accent bar, trust copy, and a primary green action (e.g. Cornerstone or SSO)",
+    "type": "connect_oauth_card",
+    "config": {
+      "defaultCardTitle": "Connect to Cornerstone",
+      "defaultCardBody": "To provide personalized career recommendations and courses, Agentforce needs to securely link your Slack workspace with your Cornerstone account.",
+      "defaultCardFooter": "You only need to do this once. We will never share your password.",
+      "defaultConnectedTitle": "Cornerstone Connected",
+      "defaultConnectedBody": "Your account is successfully linked. Resuming your original request...",
+      "showExternalLinkIcon": true
+    }
   }
 ]

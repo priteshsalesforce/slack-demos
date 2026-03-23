@@ -1,0 +1,13 @@
+{
+  "name": "Slack Demos",
+  "description": "Click-through Slack prototype demos (React + Vite static app)",
+  "keywords": ["node", "react", "slack", "demo"],
+  "stack": "heroku-24",
+  "buildpacks": [{ "url": "heroku/nodejs" }],
+  "env": {
+    "NPM_CONFIG_PRODUCTION": {
+      "description": "Install devDependencies on Heroku so TypeScript and Vite can run the production build.",
+      "value": "false"
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "id": "in-flow-cornerstone-auth-by-pritesh-chavan",
+  "title": "In-Flow Cornerstone Auth",
+  "createdBy": "Pritesh Chavan",
+  "workspaceName": "Acme Inc",
+  "personas": [
+    {
+      "id": "alex",
+      "name": "Alex Rivera",
+      "designation": "Employee",
+      "role": "Asks for Senior Analyst learning guidance and authorizes Cornerstone in-channel",
+      "type": "user"
+    },
+    {
+      "id": "slackbot",
+      "name": "HR Service Agent",
+      "designation": "Agentforce",
+      "role": "Detects 401 from Cornerstone, shows auth card via Unified Live context, resumes the original ask",
+      "type": "app"
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "type": "surface",
+      "context": { "surface": "dm", "with": "HR Service Agent" }
+    },
+    {
+      "id": "step-2",
+      "type": "user_message",
+      "content": {
+        "text": "What courses should I take if I'm aiming for the Senior Analyst role?",
+        "personaId": "alex"
+      }
+    },
+    {
+      "id": "step-3",
+      "type": "bot_typing",
+      "content": {
+        "duration": 1,
+        "statusText": "Checking your Cornerstone learning profile…"
+      }
+    },
+    {
+      "id": "step-4",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "connect_oauth_card",
+        "oauthTransitionAfterStepId": "step-7-cornerstone-oauth-submit",
+        "text": "I'd be happy to find those internal roles and skill gaps for you! First, I just need your permission to securely access your Cornerstone learning profile.",
+        "choices": ["Allow Access"]
+      }
+    },
+    {
+      "id": "step-5",
+      "type": "user_action",
+      "content": {
+        "action": "authorize_cornerstone",
+        "trigger": "button",
+        "personaId": "alex",
+        "choices": ["Allow Access"]
+      }
+    },
+    {
+      "id": "step-6-cornerstone-oauth-modal",
+      "type": "modal_open",
+      "content": {
+        "view": "oauth-permission",
+        "oauthAppName": "Agentforce HR",
+        "oauthModalTitle": "Sign in to Cornerstone with Slack",
+        "oauthIntegrationName": "Cornerstone OnDemand",
+        "oauthUserDisplayName": "Alex Rivera",
+        "oauthUserEmail": "alex.rivera@acme.com",
+        "oauthWorkspaceUrl": "acme-inc.slack.com",
+        "oauthAccountBadge": "Staff",
+        "oauthIntegrationInitial": "C",
+        "oauthIntegrationLogoUrl": "/assets/cornerstone-logo.png",
+        "oauthIntegrationLogoBg": "#5c2d91",
+        "oauthAllowButtonLabel": "Accept and Continue",
+        "oauthUsageItems": [
+          {
+            "text": "Establish a verified connection between your existing Cornerstone OnDemand account and Slack."
+          },
+          {
+            "text": "Help Agentforce read your learning profile—completed courses, skill scores, and active paths—so recommendations stay accurate."
+          },
+          {
+            "text": "Unlock Cornerstone-aware features in Slack: personalized course suggestions, progress context, and in-thread actions from your HR agent."
+          }
+        ]
+      }
+    },
+    {
+      "id": "step-7-cornerstone-oauth-submit",
+      "type": "modal_submit",
+      "content": {}
+    },
+    {
+      "id": "step-8",
+      "type": "bot_typing",
+      "content": {
+        "duration": 1,
+        "statusText": "Pulling your learning profile and building recommendations…"
+      }
+    },
+    {
+      "id": "step-9",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "plain_text",
+        "text": "I've analyzed your current skills in Cornerstone against the Senior Analyst requirements. Here is the suggested learning path for you.\n\n*Senior Analyst — suggested learning path*\n• *Data & storytelling* — Advanced Excel for Analysts; Storytelling with Data (internal)\n• *Finance depth* — Corporate Financial Modeling II; Budgeting & Forecasting lab\n• *Stakeholder impact* — Influencing Without Authority; Executive-ready deck reviews (cohort)\n\n*Skill gaps I'm seeing in your profile*\n• Forecasting scenarios — not yet completed\n• Cross-functional prioritization — one elective short\n\nYou can keep chatting here anytime—I'll stay synced with your Cornerstone profile in your workspace."
+      }
+    }
+  ]
+}

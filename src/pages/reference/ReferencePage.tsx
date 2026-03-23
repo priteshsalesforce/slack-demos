@@ -280,6 +280,34 @@ export function ReferencePage() {
           </PrimaryLinkLarge>
         </section>
 
+        {/* Sharing — public links */}
+        <section
+          id="sharing-your-demo"
+          className="rounded-xl border p-6 bg-white scroll-mt-6"
+          style={{ borderColor: 'var(--slack-border)' }}
+        >
+          <h2 className="font-bold text-lg mb-3" style={textStyle}>
+            Sharing your demo (public link)
+          </h2>
+          <p className="text-base mb-3" style={mutedStyle}>
+            Demos are <strong style={textStyle}>not behind a login</strong>. Anyone who opens the link can view the prototype—the same as you do in the browser.
+          </p>
+          <p className="text-base mb-3" style={mutedStyle}>
+            For the link to work <strong style={textStyle}>for people outside your computer</strong>, the app must be <strong style={textStyle}>deployed</strong> to a public URL (for example Heroku, Netlify, or Vercel). Build with <code className="px-1.5 py-0.5 rounded text-sm" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>npm run build</code> and host the output; see the project <strong style={textStyle}>README</strong> for one-click-style steps (e.g. Heroku).
+          </p>
+          <ul className="list-disc list-inside space-y-2 text-base mb-3" style={mutedStyle}>
+            <li>
+              On the <strong style={textStyle}>home page</strong>, use <strong style={textStyle}>Share demo</strong> on a card to copy <code className="px-1.5 py-0.5 rounded text-sm" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>https://&lt;your-deployed-site&gt;/demo/&lt;demo-id&gt;</code>. That is the link to share.
+            </li>
+            <li>
+              A link that starts with <code className="px-1.5 py-0.5 rounded text-sm" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>http://localhost</code> only works on your machine—send the deployed URL instead.
+            </li>
+            <li>
+              Demo content is <strong style={textStyle}>included when the app is built</strong>. After you add or change files under <code className="px-1.5 py-0.5 rounded text-sm" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>Demos/</code>, run a new build and redeploy so others get the latest demo.
+            </li>
+          </ul>
+        </section>
+
         {/* Advanced: step types */}
         <section className="rounded-xl border overflow-hidden bg-white" style={{ borderColor: 'var(--slack-border)' }}>
           <SecondaryButton
@@ -327,7 +355,7 @@ export function ReferencePage() {
                 Inside that folder you’ll find: <strong style={textStyle}>demo.json</strong> (the demo definition), <strong style={textStyle}>story.md</strong> (your story in markdown), and one JSON file per human persona (e.g. <code className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>alex.json</code>, <code className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>sarah.json</code>). Slackbot is defined inside <code className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>demo.json</code>.
               </p>
               <p className="text-base mb-4" style={mutedStyle}>
-                In the app, your demo appears on the home page and is playable at: <strong style={textStyle}>/demo/&lt;demo-id&gt;</strong> (the <code className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>id</code> comes from <code className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>demo.json</code>).
+                In the app, your demo appears on the home page and is playable at: <strong style={textStyle}>/demo/&lt;demo-id&gt;</strong> (the <code className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>id</code> comes from <code className="px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>demo.json</code>). To share that URL with anyone on the internet, deploy the app and read <a href="#sharing-your-demo" className="font-semibold underline" style={{ color: 'var(--slack-avatar-bg)' }}>Sharing your demo</a> on this page.
               </p>
 
               <h3 className="font-semibold text-base mb-3" style={textStyle}>

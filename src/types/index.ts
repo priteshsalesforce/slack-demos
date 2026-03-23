@@ -76,11 +76,19 @@ export interface AppMessageStep extends BaseStep {
     personaId?: string
     /** Choice buttons shown below the message (e.g. ["Emotional Abuse", "Harassment"]) */
     choices?: string[]
-    /** Template ID from Slackbot templates (plain_text, text_with_buttons, construct_case, etc.) */
+    /** Template ID from Slackbot templates (plain_text, text_with_buttons, construct_case, connect_oauth_card, etc.) */
     templateId?: string
     /** For construct_case */
     caseTitle?: string
     caseFields?: { label: string; value: string }[]
+    /** For connect_oauth_card (optional; template config supplies defaults) */
+    connectCardTitle?: string
+    connectCardBody?: string
+    connectCardFooter?: string
+    /** After this step id (e.g. modal_submit), connect_oauth_card shows the “connected” state in place */
+    oauthTransitionAfterStepId?: string
+    connectConnectedTitle?: string
+    connectConnectedBody?: string
   }
 }
 
@@ -92,13 +100,36 @@ export interface UserActionStep extends BaseStep {
     personaId?: string
     /** Choice labels when trigger is button and multiple options exist */
     choices?: string[]
+    /** When true, skip the generic “Done! I've got your choice…” bot line after this action */
+    suppressAcknowledgment?: boolean
   }
+}
+
+/** Three items for the “Your account details will be used to” list in oauth-permission modals */
+export interface OAuthModalUsageItem {
+  text: string
 }
 
 export interface ModalOpenStep extends BaseStep {
   type: 'modal_open'
   content: {
     view: string | object
+    /** For view oauth-permission */
+    oauthAppName?: string
+    oauthIntegrationName?: string
+    oauthModalTitle?: string
+    oauthUserDisplayName?: string
+    oauthUserEmail?: string
+    oauthWorkspaceUrl?: string
+    oauthAccountBadge?: string
+    oauthAccountSectionLabel?: string
+    oauthIntegrationInitial?: string
+    oauthIntegrationLogoBg?: string
+    oauthIntegrationLogoUrl?: string
+    oauthUsageHeading?: string
+    oauthUsageItems?: OAuthModalUsageItem[]
+    oauthLegalNotice?: string
+    oauthAllowButtonLabel?: string
   }
 }
 
@@ -106,6 +137,8 @@ export interface ModalSubmitStep extends BaseStep {
   type: 'modal_submit'
   content: {
     values?: Record<string, string>
+    /** When true, skip the generic “Thanks, I've got that…” line after submit */
+    suppressAcknowledgment?: boolean
   }
 }
 

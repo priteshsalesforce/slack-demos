@@ -24,11 +24,23 @@
   --slack-msg-text: #1d1c1d;
   --slack-msg-muted: #616061;
   --slack-msg-hover: #f5f5f5;
+  /* Message row: floating action pill (light theme, Slack-like) */
+  --slack-msg-actions-bg: #ffffff;
+  --slack-msg-actions-border: #c5c5c5;
+  --slack-msg-actions-icon: #616061;
+  --slack-msg-actions-icon-hover-bg: rgba(29, 28, 29, 0.08);
+  /* Slight icon pop on hover (Slack desktop) */
+  --slack-msg-actions-icon-hover-scale: 1.25;
+  /* Message row hover toolbar shadow */
+  --slack-msg-actions-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
   --slack-mention: #1264a3;
 
   /* Buttons - Default (green) used project-wide; accent (purple) for primary CTAs */
   --slack-btn-default-bg: rgba(0, 122, 90, 1);
   --slack-btn-default-text: rgba(255, 255, 255, 1);
+  /* Destructive primary (filled red) — confirmations, delete */
+  --slack-btn-danger-bg: #c53030;
+  --slack-btn-danger-text: #ffffff;
   --slack-btn-bg: #ffffff;
   --slack-btn-border: #d1d1d1;
   --slack-btn-secondary-border: rgba(124, 122, 127, 1);
@@ -43,6 +55,10 @@
   --slack-input-padding-x: 8px;
   --slack-input-padding-y: 8px;
   --slack-input-margin: 0;
+
+  /* Focus ring - matches Slack accent (purple); use for buttons/inputs globally */
+  --focus-ring-color: #007A5A;
+  --focus-ring-offset: 0px;
 
   /* Avatars & accents */
   --slack-avatar-bg: #611f69;
@@ -71,6 +87,91 @@
   color: var(--slack-btn-default-text);
   background-color: var(--slack-btn-default-bg);
   border: none;
+}
+
+/* Message hover toolbar: icon-only, not primary green CTA */
+.slack-layout .slack-main-content .slack-msg-hover-actions {
+  background-color: #ffffff !important;
+  color: #1d1c1d;
+}
+.slack-layout .slack-main-content .slack-msg-hover-actions button,
+.slack-layout .slack-main-content .slack-msg-hover-actions .slack-msg-hover-action-btn {
+  background-color: rgba(255, 255, 255, 1) !important;
+  color: rgba(0, 0, 0, 1) !important;
+  border: none !important;
+  padding: 0 !important;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 10px;
+  opacity: 1 !important;
+}
+.slack-layout .slack-main-content .slack-msg-hover-actions button:hover,
+.slack-layout .slack-main-content .slack-msg-hover-actions button:focus-visible,
+.slack-layout .slack-main-content .slack-msg-hover-actions .slack-msg-hover-action-btn:hover,
+.slack-layout .slack-main-content .slack-msg-hover-actions .slack-msg-hover-action-btn:focus-visible {
+  background-color: var(--slack-msg-actions-icon-hover-bg) !important;
+  color: rgba(0, 0, 0, 1) !important;
+  outline: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.slack-layout .slack-main-content .slack-msg-hover-actions .slack-msg-hover-action-icon {
+  display: block;
+  transform: scale(1);
+  transform-origin: center;
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slack-layout .slack-main-content .slack-msg-hover-actions button:hover .slack-msg-hover-action-icon,
+.slack-layout .slack-main-content .slack-msg-hover-actions button:focus-visible .slack-msg-hover-action-icon,
+.slack-layout .slack-main-content .slack-msg-hover-actions .slack-msg-hover-action-btn:hover .slack-msg-hover-action-icon,
+.slack-layout .slack-main-content .slack-msg-hover-actions .slack-msg-hover-action-btn:focus-visible .slack-msg-hover-action-icon {
+  transform: scale(var(--slack-msg-actions-icon-hover-scale));
+}
+
+/*
+ * Message hover toolbar — unscoped overrides: ChatView often renders outside .slack-layout
+ * (e.g. StoryEngine), so global index.css `button` green + focus ring would still apply otherwise.
+ */
+.slack-msg-hover-actions {
+  background-color: #ffffff !important;
+  color: #1d1c1d;
+}
+.slack-msg-hover-actions button,
+.slack-msg-hover-actions .slack-msg-hover-action-btn {
+  background-color: rgba(255, 255, 255, 1) !important;
+  color: rgba(0, 0, 0, 1) !important;
+  border: none !important;
+  padding: 0 !important;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 10px;
+  opacity: 1 !important;
+}
+.slack-msg-hover-actions button:hover,
+.slack-msg-hover-actions button:focus-visible,
+.slack-msg-hover-actions .slack-msg-hover-action-btn:hover,
+.slack-msg-hover-actions .slack-msg-hover-action-btn:focus-visible {
+  background-color: var(--slack-msg-actions-icon-hover-bg) !important;
+  color: rgba(0, 0, 0, 1) !important;
+  outline: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.slack-msg-hover-actions .slack-msg-hover-action-icon {
+  display: block;
+  transform: scale(1);
+  transform-origin: center;
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slack-msg-hover-actions button:hover .slack-msg-hover-action-icon,
+.slack-msg-hover-actions button:focus-visible .slack-msg-hover-action-icon,
+.slack-msg-hover-actions .slack-msg-hover-action-btn:hover .slack-msg-hover-action-icon,
+.slack-msg-hover-actions .slack-msg-hover-action-btn:focus-visible .slack-msg-hover-action-icon {
+  transform: scale(var(--slack-msg-actions-icon-hover-scale));
 }
 
 /* Persona bar step nav buttons: semi-transparent white (overrides default green) */
@@ -147,4 +248,34 @@ button.link-button:active,
 .link-button:active {
   background: none !important;
   background-color: transparent !important;
+}
+
+/* Text link buttons: semantic variants (design system showcase + inline actions) */
+button.link-button.link-button--primary,
+.link-button.link-button--primary {
+  color: var(--slack-btn-default-bg);
+}
+button.link-button.link-button--secondary,
+.link-button.link-button--secondary {
+  color: var(--slack-text);
+}
+button.link-button.link-button--disabled,
+button.link-button.link-button--disabled:disabled,
+.link-button.link-button--disabled {
+  color: var(--slack-msg-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+}
+button.link-button.link-button--large,
+.link-button.link-button--large {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Composer send/options: no focus ring */
+.composer-action-bar button:focus,
+.composer-action-bar button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }

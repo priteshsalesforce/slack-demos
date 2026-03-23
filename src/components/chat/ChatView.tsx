@@ -1,19 +1,66 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useId } from 'react'
 import { getTemplateComponent, getTemplateById } from '@/extensions/slackResponseTemplateRegistry'
 import type { ChatMessagePayload } from '@/engine/StoryEngine'
 import { formatMessageWithMentions } from '@/components/chat/formatMessageWithMentions'
 import { ChatHeader as SharedChatHeader } from '@/components/chat/ChatHeader'
 import type { HeaderViewType } from '@/components/chat/ChatHeader'
+import iconForwardMessage from '@/assets/icons/Forword message.svg'
+import iconMoreActions from '@/assets/icons/More actions.svg'
+import iconSaveForLater from '@/assets/icons/Save for later.svg'
 
-/** Typing animation: milliseconds per character. Same for all messages so short and long feel equal. Increase to slow down. */
-const TYPING_MS_PER_CHAR = 50
+/** Composer (user) typing: ms per character. Increase to slow down. */
+const USER_TYPING_MS_PER_CHAR = 50
+/** Slackbot reply typing: faster than the composer. Increase to slow down. */
+const SLACKBOT_TYPING_MS_PER_CHAR = 10
+
+/**
+ * Character-at-a-time reveal. When `active` is false, shows full text immediately.
+ */
+function useCharTypingAnimation(
+  fullText: string,
+  active: boolean,
+  onTick?: () => void,
+  msPerChar: number = USER_TYPING_MS_PER_CHAR
+): number {
+  const [visibleLength, setVisibleLength] = useState(0)
+  const tickRef = useRef(onTick)
+  tickRef.current = onTick
+
+  useEffect(() => {
+    if (!active) {
+      setVisibleLength(fullText.length)
+      return
+    }
+    if (fullText.length === 0) {
+      setVisibleLength(0)
+      return
+    }
+    setVisibleLength(0)
+    let i = 0
+    const t = setInterval(() => {
+      i++
+      setVisibleLength(i)
+      tickRef.current?.()
+      if (i >= fullText.length) clearInterval(t)
+    }, msPerChar)
+    return () => clearInterval(t)
+  }, [active, fullText, msPerChar])
+
+  return visibleLength
+}
 
 export type Message = ChatMessagePayload
+
+function getBotTypingPlainText(message: ChatMessagePayload): string {
+  const t = message.templateContent?.text
+  if (typeof t === 'string' && t.length > 0) return t
+  return message.text ?? ''
+}
 
 interface ChatViewProps {
   messages: Message[]
   /** When set, show this text being typed in the input; user clicks send to advance */
-  pendingUserMessage?: { text: string; author: string }
+  pendingUserMessage?: { text: string; author: string; avatarUrl?: string }
   /** When true, show thinking indicator in message area and status in input area */
   showThinking?: boolean
   /** Optional status text when thinking (e.g. "Looking into Slack history...") */
@@ -38,43 +85,32 @@ export function ChatView({
   viewType = 'slackbot',
 }: ChatViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [typedLength, setTypedLength] = useState(0)
 
-  // Typing animation for pending user message
-  const fullText = pendingUserMessage?.text ?? ''
-  useEffect(() => {
-    if (!pendingUserMessage) {
-      setTypedLength(0)
-      return
-    }
-    setTypedLength(0)
-    const chars = fullText.length
-    if (chars === 0) return
-    const delay = TYPING_MS_PER_CHAR
-    let i = 0
-    const t = setInterval(() => {
-      i++
-      setTypedLength(i)
-      if (i >= chars) clearInterval(t)
-    }, delay)
-    return () => clearInterval(t)
-  }, [pendingUserMessage?.text, fullText.length])
-
-  // When new messages or thinking state change, jump to bottom immediately (no smooth scroll) so the user isn’t disturbed by the UI scrolling down
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [messages, typedLength, showThinking])
+  }, [])
 
-  const displayText = fullText.slice(0, typedLength)
-  const isTypingComplete = typedLength >= fullText.length && fullText.length > 0
+  const fullText = pendingUserMessage?.text ?? ''
+  const userTypedLen = useCharTypingAnimation(fullText, Boolean(pendingUserMessage), scrollToBottom)
+
+  // When new messages or thinking state change, jump to bottom immediately (no smooth scroll) so the user isn’t disturbed by the UI scrolling down
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, userTypedLen, showThinking, scrollToBottom])
+
+  const displayText = fullText.slice(0, userTypedLen)
+  const isTypingComplete = userTypedLen >= fullText.length && fullText.length > 0
   const hasMessageReady = Boolean(pendingUserMessage && isTypingComplete)
+
+  const lastRealMessage = [...messages].reverse().find((m) => !m.isNewDivider)
+  const typingBotMessageId = lastRealMessage?.isApp ? lastRealMessage.id : undefined
 
   return (
     <div
       className="flex flex-col flex-1 min-h-0 w-full"
-      style={{ backgroundColor: '#ffffff', height: '100%' }}
+      style={{ backgroundColor: '#ffffff', height: '100%', borderRadius: 0, boxSizing: 'border-box' }}
     >
       {/* Header: use shared ChatHeader so channel/thread show correct layout and actions */}
       <SharedChatHeader viewType={viewType} title={title} />
@@ -82,7 +118,7 @@ export function ChatView({
       {/* Messages area - scrollable; spacer pushes content to bottom when short; content overflows and scrolls when long */}
       <div
         ref={scrollRef}
-        className="flex flex-col overflow-y-auto overflow-x-hidden px-4 py-6"
+        className="flex flex-col overflow-y-auto overflow-x-hidden"
         style={{
           flex: '1 1 0%',
           minHeight: 0,
@@ -92,32 +128,43 @@ export function ChatView({
       >
         {/* Spacer: takes remaining space so messages sit at bottom when few; shrinks when content overflows */}
         <div style={{ flex: '1 1 0%', minHeight: 0 }} aria-hidden />
-        <div className="mx-auto space-y-4 w-full" style={{ width: 672, maxWidth: '100%' }}>
+        <div className="flex flex-col w-full gap-0 pt-0.5">
           {messages.map((msg) =>
             msg.isNewDivider ? (
               <NewTaggedDivider key={msg.id} />
             ) : (
-              <ChatMessage key={msg.id} message={msg} onChoiceClick={onChoiceClick} />
+              <ChatMessage
+                key={msg.id}
+                message={msg}
+                onChoiceClick={onChoiceClick}
+                botTypingEnabled={msg.isApp === true && msg.id === typingBotMessageId}
+                onBotTypingTick={scrollToBottom}
+              />
             )
           )}
           {showThinking && (
-            <div className="flex gap-3 py-0 w-full">
-              <img
-                src="/assets/slackbot-icon.png"
-                alt="Slackbot"
-                className="w-9 h-9 rounded-lg flex-shrink-0 object-cover"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-extrabold text-[15px]" style={{ color: 'var(--slack-text)' }}>
-                    Slackbot
-                  </span>
-                  <span className="text-[11px]" style={{ color: 'var(--slack-msg-muted)' }}>
-                    Just now
-                  </span>
-                </div>
-                <div className="text-[15px] leading-relaxed" style={{ color: 'var(--slack-text)' }}>
-                  <span className="italic">{thinkingStatusText ?? 'Thinking'}</span>
+            <div className="slack-msg-row group relative w-full overflow-visible py-1.5 transition-[background-color] duration-100 ease-out hover:bg-[var(--slack-msg-hover)] focus-within:bg-[var(--slack-msg-hover)]">
+              <div className="relative flex w-full gap-3 px-4 overflow-visible">
+                <img
+                  src="/assets/slackbot-icon.png"
+                  alt="Slackbot"
+                  className="w-9 h-9 rounded-lg flex-shrink-0 object-cover"
+                />
+                <div className="flex-1 min-w-0 overflow-visible">
+                  <div className="relative overflow-visible">
+                    <MessageHoverActions />
+                    <div className="flex items-baseline gap-2 min-h-[18px]">
+                      <span className="font-extrabold text-[15px]" style={{ color: 'var(--slack-text)' }}>
+                        Slackbot
+                      </span>
+                      <span className="text-[11px]" style={{ color: 'var(--slack-msg-muted)' }}>
+                        Just now
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-[15px] leading-relaxed" style={{ color: 'var(--slack-text)' }}>
+                    <span className="italic">{thinkingStatusText ?? 'Thinking'}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -130,9 +177,9 @@ export function ChatView({
         className="flex-shrink-0 px-4 py-4"
         style={{ backgroundColor: '#ffffff' }}
       >
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full min-w-0">
           <div
-            className="rounded-2xl px-4 pt-3 pb-2 flex flex-col min-h-[88px] gap-0"
+            className="rounded-2xl px-4 pt-3 pb-2 flex flex-col justify-start min-h-[88px] gap-0 w-full"
             style={{
               backgroundColor: '#ffffff',
               border: '1px solid rgba(204, 204, 204, 1)',
@@ -153,7 +200,7 @@ export function ChatView({
                 )}
               </div>
               {/* Action bar: fixed height so composer doesn't shift when send button appears */}
-              <div className="flex items-center justify-between pt-1 pb-0.5 h-[40px] flex-shrink-0">
+              <div className="composer-action-bar flex items-center justify-between pt-1 pb-0.5 h-[40px] flex-shrink-0">
                 <div className="flex items-center gap-1 p-0 h-fit">
                   <ComposerIconButton aria-label="Add attachment">
                     <PlusIcon />
@@ -169,7 +216,7 @@ export function ChatView({
                   </ComposerIconButton>
                 </div>
                 <div
-                  className="flex items-stretch overflow-hidden flex-shrink-0 gap-0 outline-none focus-within:outline-none"
+                  className="flex items-stretch overflow-hidden flex-shrink-0 gap-0 outline-none focus-within:outline-none mt-0 mb-0 -ml-2 -mr-2"
                   style={
                     hasMessageReady
                       ? { borderRadius: 7, backgroundColor: '#007a5a' }
@@ -319,10 +366,160 @@ function CaretDownIcon({ active }: { active?: boolean }) {
   )
 }
 
+type MessageActionId = 'forward' | 'bookmark' | 'more'
+
+/** Slack-style floating actions + per-button hover (circular hit) and dark tooltip above. */
+function MessageHoverActions() {
+  const [activeTip, setActiveTip] = useState<MessageActionId | null>(null)
+  const uid = useId()
+
+  return (
+    <div
+      className="slack-msg-hover-actions absolute z-20 flex items-center gap-0 rounded-xl py-0.5 pl-0.5 pr-1 opacity-0 pointer-events-none transition-opacity duration-150 ease-out group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+      style={{
+        right: 0,
+        transform: 'translateY(-50%)',
+        backgroundColor: '#ffffff',
+        color: '#1d1c1d',
+        border: '1px solid var(--slack-msg-actions-border)',
+        boxShadow: 'var(--slack-msg-actions-shadow)',
+      }}
+      onMouseLeave={() => setActiveTip(null)}
+    >
+      <MessageActionSlot
+        id="forward"
+        uid={uid}
+        label="Forward message …"
+        activeTip={activeTip}
+        setActiveTip={setActiveTip}
+        ariaLabel="Forward message"
+      >
+        <MessageActionForwardIcon />
+      </MessageActionSlot>
+      <MessageActionSlot
+        id="bookmark"
+        uid={uid}
+        label="Save for later …"
+        activeTip={activeTip}
+        setActiveTip={setActiveTip}
+        ariaLabel="Save for later"
+      >
+        <MessageActionBookmarkIcon />
+      </MessageActionSlot>
+      <MessageActionSlot
+        id="more"
+        uid={uid}
+        label="More actions …"
+        activeTip={activeTip}
+        setActiveTip={setActiveTip}
+        ariaLabel="More actions"
+      >
+        <MessageActionMoreIcon />
+      </MessageActionSlot>
+    </div>
+  )
+}
+
+function MessageActionSlot({
+  id,
+  uid,
+  label,
+  activeTip,
+  setActiveTip,
+  ariaLabel,
+  children,
+}: {
+  id: MessageActionId
+  uid: string
+  label: string
+  activeTip: MessageActionId | null
+  setActiveTip: (v: MessageActionId | null) => void
+  ariaLabel: string
+  children: React.ReactNode
+}) {
+  const tipId = `${uid}-${id}-tip`
+  const showTip = activeTip === id
+  const iconBtn =
+    'slack-msg-hover-action-btn flex items-center justify-center size-8 rounded-[10px] shrink-0 outline-none transition-[background-color] duration-100'
+
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        className={iconBtn}
+        aria-label={ariaLabel}
+        aria-describedby={showTip ? tipId : undefined}
+        onMouseEnter={() => setActiveTip(id)}
+        onFocus={() => setActiveTip(id)}
+        onBlur={() => setActiveTip(null)}
+      >
+        {children}
+      </button>
+      {showTip ? (
+        <div
+          id={tipId}
+          role="tooltip"
+          className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-[60] min-w-max -translate-x-1/2"
+        >
+          <div className="relative rounded-md bg-[#1d1c1d] px-2.5 py-1.5 text-center text-[13px] font-normal leading-snug text-white shadow-md">
+            {label}
+            <span
+              className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-[6px] border-solid border-transparent border-t-[#1d1c1d]"
+              aria-hidden
+            />
+          </div>
+        </div>
+      ) : null}
+    </span>
+  )
+}
+
+function MessageActionForwardIcon() {
+  return (
+    <img
+      src={iconForwardMessage}
+      alt=""
+      aria-hidden
+      width={18}
+      height={18}
+      className="slack-msg-hover-action-icon shrink-0 pointer-events-none select-none object-contain"
+      draggable={false}
+    />
+  )
+}
+
+function MessageActionBookmarkIcon() {
+  return (
+    <img
+      src={iconSaveForLater}
+      alt=""
+      aria-hidden
+      width={18}
+      height={18}
+      className="slack-msg-hover-action-icon shrink-0 pointer-events-none select-none object-contain"
+      draggable={false}
+    />
+  )
+}
+
+function MessageActionMoreIcon() {
+  return (
+    <img
+      src={iconMoreActions}
+      alt=""
+      aria-hidden
+      width={18}
+      height={18}
+      className="slack-msg-hover-action-icon shrink-0 pointer-events-none select-none object-contain"
+      draggable={false}
+    />
+  )
+}
+
 /** "New" tagged divider strip: thin red line with "New" on the right. Shown when switching back to a persona's view. */
 function NewTaggedDivider() {
   return (
-    <div className="flex items-center w-full gap-3 py-2" aria-hidden>
+    <div className="flex items-center w-full gap-3 py-2 px-4" aria-hidden>
       <div
         className="flex-1 min-w-0"
         style={{ height: 2, backgroundColor: '#c53030', borderRadius: 1 }}
@@ -337,8 +534,56 @@ function NewTaggedDivider() {
   )
 }
 
-function ChatMessage({ message, onChoiceClick }: { message: Message; onChoiceClick?: (choice: string) => void }) {
-  if (message.author === 'System') {
+/** User row avatar: photo from persona when available; initials fallback if URL missing or load fails. */
+function UserMessageAvatar({ author, avatarUrl }: { author: string; avatarUrl?: string }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const showFallback = !avatarUrl || imgFailed
+  if (showFallback) {
+    return (
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+        style={{ backgroundColor: 'var(--slack-send-btn)' }}
+        aria-hidden
+      >
+        {author.slice(0, 2).toUpperCase()}
+      </div>
+    )
+  }
+  return (
+    <img
+      src={avatarUrl}
+      alt=""
+      className="w-9 h-9 rounded-lg flex-shrink-0 object-cover"
+      loading="lazy"
+      decoding="async"
+      onError={() => setImgFailed(true)}
+    />
+  )
+}
+
+function ChatMessage({
+  message,
+  onChoiceClick,
+  botTypingEnabled = false,
+  onBotTypingTick,
+}: {
+  message: Message
+  onChoiceClick?: (choice: string) => void
+  /** When true and this is the latest app message, body text types out like the composer */
+  botTypingEnabled?: boolean
+  onBotTypingTick?: () => void
+}) {
+  const isSystem = message.author === 'System'
+  const isApp = message.isApp ?? false
+  const typingPlain = !isSystem && isApp ? getBotTypingPlainText(message) : ''
+  const botTypedLen = useCharTypingAnimation(
+    typingPlain,
+    Boolean(!isSystem && isApp && botTypingEnabled),
+    onBotTypingTick,
+    SLACKBOT_TYPING_MS_PER_CHAR
+  )
+
+  if (isSystem) {
     return (
       <div className="flex justify-center py-4">
         <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--slack-msg-hover)', color: 'var(--slack-msg-muted)' }}>
@@ -347,7 +592,10 @@ function ChatMessage({ message, onChoiceClick }: { message: Message; onChoiceCli
       </div>
     )
   }
-  const isApp = message.isApp ?? false
+
+  const showTypingPlaceholder =
+    isApp && typingPlain.length > 0 && botTypedLen < typingPlain.length
+
   const templateId = message.templateId
   const templateDef = templateId ? getTemplateById(templateId) : undefined
   const templateType = (templateDef?.type ?? templateId) as string | undefined
@@ -358,72 +606,77 @@ function ChatMessage({ message, onChoiceClick }: { message: Message; onChoiceCli
     choices: message.choices,
     personaNames: message.personaNames,
   }
+  const personaNames = message.personaNames ?? []
 
-  const body =
-    TemplateComponent && templateId ? (
-      <TemplateComponent
-        content={content as Record<string, unknown> & { text?: string; choices?: string[] }}
-        config={config}
-        timestamp={message.timestamp}
-        onChoiceClick={onChoiceClick}
-      />
-    ) : (
-      <>
-        {message.text && (
-          <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words" style={{ color: 'var(--slack-text)' }}>
-            {formatMessageWithMentions(message.text, message.personaNames ?? [])}
-          </div>
-        )}
-        {message.choices && message.choices.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3 items-center">
-            {message.choices.map((choice) => (
-              <button
-                key={choice}
-                type="button"
-                onClick={() => onChoiceClick?.(choice)}
-                className="inline-flex items-center justify-center flex-shrink-0 h-9 px-3 py-2 rounded-lg text-[13px] font-semibold whitespace-nowrap transition hover:bg-[#f5f5f5]"
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #d1d1d1',
-                  color: 'var(--slack-text)',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                }}
-              >
-                {choice}
-              </button>
-            ))}
-          </div>
-        )}
-      </>
-    )
-
-  return (
-    <div className="flex gap-3 py-0">
-      {isApp ? (
-        <img
-          src="/assets/slackbot-icon.png"
-          alt={message.author}
-          className="w-9 h-9 rounded-lg flex-shrink-0 object-cover pt-0 pb-0"
-        />
-      ) : (
-        <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={{ backgroundColor: 'var(--slack-send-btn)' }}
-        >
-          {message.author.slice(0, 2).toUpperCase()}
+  const body = showTypingPlaceholder ? (
+    <div className="min-h-[24px] text-[15px] leading-relaxed whitespace-pre-wrap break-words" style={{ color: 'var(--slack-text)' }}>
+      {formatMessageWithMentions(typingPlain.slice(0, botTypedLen), personaNames)}
+      <span className="animate-pulse">|</span>
+    </div>
+  ) : TemplateComponent && templateId ? (
+    <TemplateComponent
+      content={content as Record<string, unknown> & { text?: string; choices?: string[] }}
+      config={config}
+      timestamp={message.timestamp}
+      onChoiceClick={onChoiceClick}
+    />
+  ) : (
+    <>
+      {message.text && (
+        <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words" style={{ color: 'var(--slack-text)' }}>
+          {formatMessageWithMentions(message.text, personaNames)}
         </div>
       )}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-start gap-2 h-[18px] m-0">
-          <span className="font-extrabold text-[15px]" style={{ color: 'var(--slack-text)' }}>
-            {message.author}
-          </span>
-          <span className="text-[11px]" style={{ color: 'var(--slack-msg-muted)' }}>
-            {message.timestamp ?? 'Just now'}
-          </span>
+      {message.choices && message.choices.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3 items-center">
+          {message.choices.map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              onClick={() => onChoiceClick?.(choice)}
+              className="inline-flex items-center justify-center flex-shrink-0 h-9 px-3 py-2 rounded-lg text-[13px] font-semibold whitespace-nowrap transition hover:bg-[#f5f5f5]"
+              style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #d1d1d1',
+                color: 'var(--slack-text)',
+                fontSize: '13px',
+                fontWeight: 600,
+              }}
+            >
+              {choice}
+            </button>
+          ))}
         </div>
-        {body}
+      )}
+    </>
+  )
+
+  return (
+    <div className="slack-msg-row group relative w-full overflow-visible py-1.5 transition-[background-color] duration-100 ease-out hover:bg-[var(--slack-msg-hover)] focus-within:bg-[var(--slack-msg-hover)]">
+      <div className="relative flex w-full gap-3 px-4 overflow-visible">
+        {isApp ? (
+          <img
+            src="/assets/slackbot-icon.png"
+            alt={message.author}
+            className="w-9 h-9 rounded-lg flex-shrink-0 object-cover pt-0 pb-0"
+          />
+        ) : (
+          <UserMessageAvatar author={message.author} avatarUrl={message.avatarUrl} />
+        )}
+        <div className="flex-1 min-w-0 overflow-visible">
+          <div className="relative overflow-visible">
+            <MessageHoverActions />
+            <div className="flex items-baseline justify-start gap-2 min-h-[18px] m-0 pr-1">
+              <span className="font-extrabold text-[15px]" style={{ color: 'var(--slack-text)' }}>
+                {message.author}
+              </span>
+              <span className="text-[11px]" style={{ color: 'var(--slack-msg-muted)' }}>
+                {message.timestamp ?? 'Just now'}
+              </span>
+            </div>
+          </div>
+          {body}
+        </div>
       </div>
     </div>
   )

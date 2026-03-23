@@ -1,0 +1,25 @@
+{
+  "personaId": "alex",
+  "title": "Alex Kim",
+  "description": "Employee who requests paternity leave in Slackbot after a team-leave check-in",
+  "stepIds": [
+    "step-1",
+    "step-2",
+    "step-3",
+    "step-4",
+    "step-5",
+    "step-6",
+    "step-7",
+    "step-8",
+    "step-9",
+    "step-10",
+    "step-11",
+    "step-15",
+    "step-16"
+  ],
+  "overrides": {
+    "introInstructions": "You're viewing as Alex. Start in #team-leave, then move into Slackbot to request paternity leave and get your approval confirmation.",
+    "channels": ["#general", "#team-leave"],
+    "dms": ["Slackbot", "Sarah Chen"]
+  }
+}

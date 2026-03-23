@@ -1,0 +1,21 @@
+{
+  "personaId": "alex",
+  "title": "Alex Rivera",
+  "description": "Employee asking for Senior Analyst learning paths; completes in-channel Cornerstone auth and receives recommendations",
+  "stepIds": [
+    "step-1",
+    "step-2",
+    "step-3",
+    "step-4",
+    "step-5",
+    "step-6-cornerstone-oauth-modal",
+    "step-7-cornerstone-oauth-submit",
+    "step-8",
+    "step-9"
+  ],
+  "overrides": {
+    "introInstructions": "You're viewing as Alex. Ask the HR Service Agent for role-specific courses, complete the one-time Cornerstone connection in Slack, and see recommendations without leaving the conversation.",
+    "channels": ["#general"],
+    "dms": ["HR Service Agent"]
+  }
+}

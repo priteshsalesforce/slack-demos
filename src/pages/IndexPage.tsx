@@ -1,21 +1,67 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
-import { PrimaryLinkLarge, SecondaryLinkLarge, SecondaryButton } from '@/components/ui/DesignSystemButtons'
+import {
+  PrimaryLinkLarge,
+  SecondaryLinkLarge,
+  SecondaryButton,
+  DestructivePrimaryButton,
+} from '@/components/ui/DesignSystemButtons'
 import { getStories } from '@/stories'
 import moreIcon from '@/assets/icons/more.svg'
+import moreActionsCardIcon from '@/assets/icons/More actions.svg'
+import forwardMessageIcon from '@/assets/icons/Forword message.svg'
 
 export function IndexPage() {
   const stories = getStories()
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false)
+  const [demoMenuOpenId, setDemoMenuOpenId] = useState<string | null>(null)
+  const [shareCopiedToast, setShareCopiedToast] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null)
   const moreOptionsRef = useRef<HTMLDivElement>(null)
+  const shareToastTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
+
+  function showShareCopiedToast() {
+    if (shareToastTimeoutRef.current) {
+      window.clearTimeout(shareToastTimeoutRef.current)
+    }
+    setShareCopiedToast(true)
+    shareToastTimeoutRef.current = window.setTimeout(() => {
+      setShareCopiedToast(false)
+      shareToastTimeoutRef.current = null
+    }, 2500)
+  }
 
   async function handleDeleteDemo(e: React.MouseEvent, id: string, title: string) {
     e.preventDefault()
     e.stopPropagation()
     setConfirmDelete({ id, title })
+  }
+
+  async function handleShareDemo(e: React.MouseEvent, id: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    const url = `${window.location.origin}/demo/${encodeURIComponent(id)}`
+    try {
+      await navigator.clipboard.writeText(url)
+      showShareCopiedToast()
+      setDemoMenuOpenId(null)
+    } catch {
+      // Fallback for non-secure contexts or denied permission
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = url
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        showShareCopiedToast()
+        setDemoMenuOpenId(null)
+      } catch {
+        alert(`Copy this link manually:\n${url}`)
+      }
+    }
   }
 
   function closeConfirm() {
@@ -51,24 +97,38 @@ export function IndexPage() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (moreOptionsRef.current && !moreOptionsRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (moreOptionsRef.current && !moreOptionsRef.current.contains(target)) {
         setMoreOptionsOpen(false)
       }
+      const inDemoMenu = (target as Element).closest?.('[data-demo-card-menu]')
+      if (!inDemoMenu && demoMenuOpenId !== null) {
+        setDemoMenuOpenId(null)
+      }
     }
-    if (moreOptionsOpen) {
+    if (moreOptionsOpen || demoMenuOpenId !== null) {
       document.addEventListener('click', handleClickOutside)
       return () => document.removeEventListener('click', handleClickOutside)
     }
-  }, [moreOptionsOpen])
+  }, [moreOptionsOpen, demoMenuOpenId])
 
   useEffect(() => {
-    if (!confirmDelete) return
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setConfirmDelete(null)
+      if (e.key !== 'Escape') return
+      setConfirmDelete(null)
+      setDemoMenuOpenId(null)
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [confirmDelete])
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (shareToastTimeoutRef.current) {
+        window.clearTimeout(shareToastTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>
@@ -157,42 +217,106 @@ export function IndexPage() {
                 .map((s) => (
                 <div
                   key={s.id}
-                  className="relative p-6 rounded-lg transition hover:shadow-lg"
+                  className="relative flex flex-col p-6 rounded-lg transition hover:shadow-lg"
                   style={{
                     backgroundColor: 'var(--slack-pane-bg)',
                     border: '1px solid rgba(0,0,0,0.06)',
                   }}
                 >
-                  <Link
-                    to={`/demo/${s.id}`}
-                    className="block focus:outline-none focus:ring-0 rounded-lg -m-2 p-2"
-                  >
-                    <h3 className="font-bold text-lg mb-1 pr-8" style={{ color: 'var(--slack-text)' }}>
-                      {s.title}
-                    </h3>
-                    <span
-                      className="inline-block mt-3 text-sm font-semibold"
-                      style={{ color: 'var(--slack-mention)' }}
+                  <div className="flex">
+                    <Link
+                      to={`/demo/${s.id}`}
+                      className="flex flex-col focus:outline-none focus:ring-0 rounded-lg"
                     >
-                      View demo →
-                    </span>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteDemo(e, s.id, s.title)}
-                    disabled={deletingId === s.id}
-                    className="absolute top-4 right-4 inline-flex items-center justify-center rounded border-2 font-semibold transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--slack-avatar-bg)] focus:ring-offset-2 disabled:opacity-50"
-                    style={{
-                      backgroundColor: 'var(--slack-btn-bg)',
-                      color: 'var(--slack-text)',
-                      borderColor: 'var(--slack-btn-secondary-border)',
-                      padding: '8px',
-                    }}
-                    aria-label={`Delete ${s.title}`}
-                    title="Delete demo"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                      <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--slack-text)' }}>
+                        {s.title}
+                      </h3>
+                      <span
+                        className="inline-block mt-3 text-sm font-semibold"
+                        style={{ color: 'var(--slack-mention)' }}
+                      >
+                        View demo →
+                      </span>
+                    </Link>
+                  </div>
+                  <div className="absolute top-4 right-4 z-20" data-demo-card-menu>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDemoMenuOpenId((open) => (open === s.id ? null : s.id))
+                      }}
+                      disabled={deletingId === s.id}
+                      className="inline-flex items-center justify-center rounded border-2 font-semibold transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--slack-avatar-bg)] focus:ring-offset-2 disabled:opacity-50"
+                      style={{
+                        backgroundColor: 'var(--slack-btn-bg)',
+                        color: 'var(--slack-text)',
+                        borderColor: 'var(--slack-btn-secondary-border)',
+                        padding: '8px',
+                        boxSizing: 'content-box',
+                      }}
+                      aria-expanded={demoMenuOpenId === s.id}
+                      aria-haspopup="true"
+                      aria-label={`More actions for ${s.title}`}
+                      title="More actions"
+                    >
+                      <img src={moreActionsCardIcon} alt="" className="w-[18px] h-[18px]" />
+                    </button>
+                    {demoMenuOpenId === s.id && (
+                      <div
+                        className="absolute right-0 top-full mt-1 min-w-[200px] rounded-lg border py-1 shadow-lg"
+                        style={{
+                          backgroundColor: 'var(--slack-pane-bg)',
+                          borderColor: 'var(--slack-border)',
+                        }}
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition hover:bg-[var(--slack-msg-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--slack-avatar-bg)] rounded-t-lg"
+                          style={{
+                            color: 'var(--slack-text)',
+                            background: 'unset',
+                            backgroundColor: 'unset',
+                            backgroundImage: 'none',
+                            border: 'none',
+                            borderColor: 'rgba(0, 0, 0, 0)',
+                            borderImage: 'none',
+                          }}
+                          onClick={(e) => handleShareDemo(e, s.id)}
+                        >
+                          <img src={forwardMessageIcon} alt="" className="w-[18px] h-[18px] shrink-0" />
+                          Share demo
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition hover:bg-[var(--slack-msg-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--slack-avatar-bg)] rounded-b-lg"
+                          style={{
+                            color: 'var(--slack-text)',
+                            background: 'unset',
+                            backgroundColor: 'unset',
+                            backgroundImage: 'none',
+                            border: 'none',
+                            borderColor: 'rgba(0, 0, 0, 0)',
+                            borderImage: 'none',
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setDemoMenuOpenId(null)
+                            handleDeleteDemo(e, s.id, s.title)
+                          }}
+                          disabled={deletingId === s.id}
+                        >
+                          <Trash2 className="w-[18px] h-[18px] shrink-0" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -207,6 +331,22 @@ export function IndexPage() {
       >
         <p>Create click-through Slack prototypes for demos and training.</p>
       </footer>
+
+      {/* Page-level copy confirmation */}
+      {shareCopiedToast && (
+        <div
+          className="fixed bottom-6 left-1/2 z-40 max-w-[min(100%-2rem,28rem)] -translate-x-1/2 rounded-lg border px-4 py-3 shadow-lg pointer-events-none"
+          style={{
+            backgroundColor: 'var(--slack-pane-bg)',
+            borderColor: 'var(--slack-border)',
+            color: 'var(--slack-text)',
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-sm font-semibold text-center">Link copied to clipboard</p>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       {confirmDelete && (
@@ -242,21 +382,7 @@ export function IndexPage() {
             </p>
             <div className="flex flex-wrap gap-3 justify-end">
               <SecondaryButton onClick={closeConfirm}>Cancel</SecondaryButton>
-              <button
-                type="button"
-                onClick={confirmDeleteDemo}
-                className="rounded px-4 py-2 border-2 text-sm font-semibold transition hover:opacity-90"
-                style={{
-                  backgroundColor: 'var(--slack-btn-default-bg)',
-                  color: 'var(--slack-btn-default-text)',
-                  borderColor: 'var(--slack-btn-default-bg)',
-                  height: 44,
-                  fontSize: '15px',
-                  fontWeight: 600,
-                }}
-              >
-                Delete
-              </button>
+              <DestructivePrimaryButton onClick={confirmDeleteDemo}>Delete</DestructivePrimaryButton>
             </div>
           </div>
         </div>

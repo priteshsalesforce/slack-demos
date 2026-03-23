@@ -35,7 +35,7 @@
     {
       "id": "step-2",
       "type": "user_message",
-      "content": { "text": "I need to file a confidential report.", "personaId": "sarah" }
+      "content": { "text": "Hi, I was mentally harassed at workplace. I would like to file a case but confidential.", "personaId": "sarah" }
     },
     {
       "id": "step-3",
@@ -64,7 +64,7 @@
       "id": "step-6",
       "type": "app_message",
       "content": {
-        "text": "Your selection \"{{selectedChoice}}\" has been registered. Please describe what you would like to report. Your report will be handled with sensitivity and confidentiality.",
+        "text": "Your selection \"{{selectedChoice}}\" has been registered. Please describe the situation in your own words. Include what you're comfortable sharing. Also, indicate when this incident happened.",
         "personaId": "slackbot"
       }
     },
@@ -85,7 +85,7 @@
       "id": "step-9",
       "type": "app_message",
       "content": {
-        "text": "Thank you for sharing this with us. I've detected that your report contains sensitive keywords related to workplace conduct. I'm flagging this case as **confidential** and routing it only to our Employee Relations team.",
+        "text": "Thank you for sharing this with us. Your confidential case has been created successfully. The case number is  00001050.",
         "personaId": "slackbot"
       }
     },
@@ -93,7 +93,7 @@
       "id": "step-10",
       "type": "app_message",
       "content": {
-        "text": "No notifications will be sent to Robert or your department. Your report has been submitted. An ER Lead will review your case and reach out to you directly. You can check the status anytime by messaging me here.",
+        "text": "This case will be handled with complete confidentiality, and the appropriate HR personnel will review your concern. If you need further assistance or updates, feel free to reach out with your case number. Let me know if there's anything else I can help you with!",
         "personaId": "slackbot"
       }
     },

@@ -49,6 +49,14 @@ export function formatMessageWithMentions(text: string, personaNames: string[]):
       const result: ReactNode[] = []
       segments.forEach((seg, i) => {
         if (i > 0) {
+          const last = result[result.length - 1]
+          if (typeof last === 'string') {
+            const withoutTrailingAts = last.replace(/@+$/u, '')
+            if (withoutTrailingAts !== last) {
+              if (withoutTrailingAts) result[result.length - 1] = withoutTrailingAts
+              else result.pop()
+            }
+          }
           result.push(
             <span key={`@${name}-${i}`} style={{ color: 'var(--slack-mention)' }}>
               @{name}

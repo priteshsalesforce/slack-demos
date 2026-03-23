@@ -22,13 +22,48 @@ Open http://localhost:5173
 
 ## Deploy to Heroku
 
-1. Build: `npm run build`
-2. Create app: `heroku create your-demo-name`
-3. Deploy: `git push heroku main`
+The app is a static SPA: **Heroku builds once on deploy** (`heroku-postbuild` → `npm run build`), then **`npm start`** serves `dist/` with `serve -s` (SPA fallback for `/demo/...` routes).
 
-The Procfile runs `npm run build` then `npm run start`. Add `dist` to `.gitignore` so Heroku builds fresh.
+### One-time setup
 
-The app will be available at `https://your-app.herokuapp.com`
+1. Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) and log in: `heroku login`
+2. From this directory (`slack-demos/`), ensure the app is a git repo and you are on the branch you want to deploy (e.g. `main`).
+3. Create the app (pick a unique name, or omit the name and Heroku assigns one):
+
+   ```bash
+   heroku create your-slack-demos-name
+   ```
+
+4. **Important:** So that Vite and TypeScript install on Heroku (they live in `devDependencies`), set:
+
+   ```bash
+   heroku config:set NPM_CONFIG_PRODUCTION=false
+   ```
+
+   (`app.json` sets this for flows that read it, e.g. some “Deploy to Heroku” setups; setting it on the app avoids failed builds.)
+
+5. Deploy:
+
+   ```bash
+   git push heroku main
+   ```
+
+   If your default branch is not `main`, use that branch name instead.
+
+6. Open the site: `heroku open`
+
+### After deploy
+
+- Public URL: `https://<your-app-name>.herokuapp.com`
+- Share a demo: `https://<your-app-name>.herokuapp.com/demo/<demo-id>` (use **Share demo** on the home page after deploy).
+
+`dist/` stays in `.gitignore`; Heroku always builds a fresh `dist/` on push.
+
+### If the build fails on Heroku
+
+- Confirm `NPM_CONFIG_PRODUCTION=false` (`heroku config:get NPM_CONFIG_PRODUCTION`).
+- Check logs: `heroku logs --tail`
+- Confirm `engines` in `package.json` matches a [supported Node version](https://devcenter.heroku.com/articles/nodejs-support#supported-runtimes) on your stack.
 
 ## Navigation (Deployed Demo)
 

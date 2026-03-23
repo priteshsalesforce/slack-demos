@@ -1,5 +1,13 @@
 import { Link } from 'react-router-dom'
-import { PrimaryButtonLarge, SecondaryButton, DisabledButton, PrimaryLinkLarge, SecondaryLinkLarge } from '@/components/ui/DesignSystemButtons'
+import {
+  PrimaryButton,
+  PrimaryButtonLarge,
+  SecondaryButton,
+  SecondaryButtonLarge,
+  DisabledButton,
+  DisabledButtonLarge,
+  TextLinkButton,
+} from '@/components/ui/DesignSystemButtons'
 
 const COLOR_SWATCHES = [
   { name: 'Text primary', token: '--slack-text', value: '#1d1c1d' },
@@ -117,20 +125,56 @@ export function FoundationDesignSystemPage() {
         {/* Buttons - shared components so changes apply everywhere */}
         <section>
           <h2 className="font-bold text-lg mb-4" style={textStyle}>Buttons</h2>
-          <div className="rounded-lg border p-6 flex flex-wrap gap-4 items-center" style={surfaceStyle}>
-            <PrimaryButtonLarge>Primary</PrimaryButtonLarge>
-            <SecondaryButton className="whitespace-nowrap">Secondary</SecondaryButton>
-            <DisabledButton>Disabled</DisabledButton>
-            <button
-              type="button"
-              className="link-button text-[13px] leading-relaxed font-semibold"
-            >
-              Link button
-            </button>
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-sm font-semibold mb-3" style={textStyle}>
+                Large button
+              </h3>
+              <p className="text-xs mb-3" style={mutedStyle}>
+                Solid: <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>PrimaryButtonLarge</code>,{' '}
+                <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>SecondaryButtonLarge</code>,{' '}
+                <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>DisabledButtonLarge</code>
+                {' — '}44px height, 15px text, px-4, rounded-lg. Link style:{' '}
+                <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>TextLinkButton</code> with{' '}
+                <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>size=&quot;large&quot;</code>.
+              </p>
+              <div className="rounded-lg border p-6 flex flex-wrap gap-4 items-center" style={surfaceStyle}>
+                <PrimaryButtonLarge>Primary</PrimaryButtonLarge>
+                <SecondaryButtonLarge>Secondary</SecondaryButtonLarge>
+                <DisabledButtonLarge>Disabled</DisabledButtonLarge>
+                <TextLinkButton variant="primary" size="large">
+                  Primary link
+                </TextLinkButton>
+                <TextLinkButton variant="secondary" size="large">
+                  Secondary link
+                </TextLinkButton>
+                <TextLinkButton variant="disabled" size="large">
+                  Disabled link
+                </TextLinkButton>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold mb-3" style={textStyle}>
+                Default buttons
+              </h3>
+              <p className="text-xs mb-3" style={mutedStyle}>
+                Solid: <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>PrimaryButton</code>,{' '}
+                <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>SecondaryButton</code>,{' '}
+                <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>DisabledButton</code>
+                {' — '}36px height, 13px text, px-3, rounded-lg. Underlined text links:{' '}
+                <code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>TextLinkButton</code>{' '}
+                (<code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>size=&quot;default&quot;</code>).
+              </p>
+              <div className="rounded-lg border p-6 flex flex-wrap gap-4 items-center" style={surfaceStyle}>
+                <PrimaryButton>Primary</PrimaryButton>
+                <SecondaryButton className="whitespace-nowrap">Secondary</SecondaryButton>
+                <DisabledButton>Disabled</DisabledButton>
+                <TextLinkButton variant="primary">Primary link</TextLinkButton>
+                <TextLinkButton variant="secondary">Secondary link</TextLinkButton>
+                <TextLinkButton variant="disabled">Disabled link</TextLinkButton>
+              </div>
+            </div>
           </div>
-          <p className="text-sm mt-2" style={mutedStyle}>
-            <strong>Secondary</strong> (<code className="px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>SecondaryButton</code>) — 36px height, 13px text, 1px border, rounded-lg. Used for chat choices (e.g. Claim Case, Option A). Tokens: <code className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>--slack-btn-bg</code>, <code className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>--slack-btn-border</code>, <code className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>--slack-btn-hover-bg</code>, <code className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--slack-msg-hover)' }}>--slack-text</code>.
-          </p>
         </section>
 
         {/* Text link / mention (persona names as in formatMessageWithMentions) */}

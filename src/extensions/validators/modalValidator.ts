@@ -6,7 +6,7 @@ type ValidatorFn = (
 ) => ValidationResult
 
 /** Validates modal_open steps (e.g. require content.view). */
-export const validateModalOpen: ValidatorFn = (step, context) => {
+export const validateModalOpen: ValidatorFn = (step, _context) => {
   if (step.type !== 'modal_open') return { valid: true }
   const content = (step as { content?: { view?: string } }).content
   if (!content?.view) {

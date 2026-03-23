@@ -1,14 +1,29 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import type { StoryConfig, StoryStep, PersonaConfig, ViewportView } from '@/types'
+import type { OAuthModalUsageItem, StoryConfig, StoryStep, PersonaConfig, ViewportView } from '@/types'
+import { resolvePersonaAvatarUrl } from '@/utils/personaAvatar'
 import { getViewportForStep, getActiveViewForStep, getSurfaceAtStep } from '@/engine/viewport'
 import { ClickThroughOverlay } from '@/components/demo/ClickThroughOverlay'
 import { DemoPersonaBar } from '@/components/demo/DemoPersonaBar'
 import { DatePickerModal } from '@/components/demo/DatePickerModal'
+import { OAuthPermissionModal } from '@/components/demo/OAuthPermissionModal'
 import { ChatView } from '@/components/chat/ChatView'
 
 /** Reserved id for "Full story (step-by-step)" showcase mode in the View as dropdown */
 export const FULL_STORY_PERSONA_ID = 'full'
+
+function parseOauthUsageItems(raw: unknown): OAuthModalUsageItem[] | undefined {
+  if (!Array.isArray(raw) || raw.length !== 3) return undefined
+  const out: OAuthModalUsageItem[] = []
+  for (const x of raw) {
+    if (x && typeof x === 'object' && typeof (x as { text?: unknown }).text === 'string') {
+      out.push({ text: (x as { text: string }).text })
+    } else {
+      return undefined
+    }
+  }
+  return out
+}
 
 interface StoryEngineProps {
   story: StoryConfig
@@ -90,18 +105,32 @@ export function StoryEngine({ story, personaConfig, onPersonaChange, fullStoryMo
   const nextStep = steps[stepIndex + 1]
   const stepAfterNext = steps[stepIndex + 2]
   const nextOpensDateModal = nextStep?.type === 'user_action' && stepAfterNext?.type === 'modal_open' && (stepAfterNext as any).content?.view === 'date-picker'
+  const nextOpensOAuthModal =
+    nextStep?.type === 'user_action' &&
+    stepAfterNext?.type === 'modal_open' &&
+    (stepAfterNext as any).content?.view === 'oauth-permission'
   const nextIsUserActionWithChoices = nextStep?.type === 'user_action' && (nextStep as any).content?.choices?.length
   const nextIsSlackbotReply = nextStep?.type === 'app_message' || nextStep?.type === 'thread_reply'
   const nextIsPersonaChange = nextStep?.type === 'surface'
   const isUserMessageStep = currentStep?.type === 'user_message'
   const isChoiceStep = currentStep?.type === 'user_action' && (currentStep as any).content?.choices?.length
   const isUserActionOpeningModal = currentStep?.type === 'user_action' && nextStep?.type === 'modal_open' && (nextStep as any).content?.view === 'date-picker'
-  const isModalOpenStep = isUserActionOpeningModal || (currentStep?.type === 'modal_open' && (currentStep as any).content?.view === 'date-picker')
+  const isUserActionOpeningOAuthModal =
+    currentStep?.type === 'user_action' &&
+    nextStep?.type === 'modal_open' &&
+    (nextStep as any).content?.view === 'oauth-permission'
+  const isDatePickerModalView =
+    isUserActionOpeningModal ||
+    (currentStep?.type === 'modal_open' && (currentStep as any).content?.view === 'date-picker')
+  const isOAuthPermissionModalView =
+    isUserActionOpeningOAuthModal ||
+    (currentStep?.type === 'modal_open' && (currentStep as any).content?.view === 'oauth-permission')
+  const isModalOpenStep = isDatePickerModalView || isOAuthPermissionModalView
   const autoAdvanceDelayMs =
     nextIsPersonaChange ? null :
     currentStep?.type === 'bot_typing' ? 1000 :
     currentStep?.type === 'user_action' && nextIsSlackbotReply && !nextOpensDateModal ? 1000 :
-    currentStep?.type === 'app_message' && !nextOpensDateModal && !nextIsUserActionWithChoices ? 1000 :
+    currentStep?.type === 'app_message' && !nextOpensDateModal && !nextOpensOAuthModal && !nextIsUserActionWithChoices ? 1000 :
     currentStep?.type === 'thread_reply' && !nextIsUserActionWithChoices ? 1000 :
     currentStep?.type === 'surface' ? 1000 :
     currentStep?.type === 'modal_submit' ? 600 :
@@ -133,11 +162,23 @@ export function StoryEngine({ story, personaConfig, onPersonaChange, fullStoryMo
   const showOverlay = !isEditMode && !isUserMessageStep && !hasChoices && !isModalOpenStep && autoAdvanceDelayMs == null
 
   // Default dates for date-picker modal (from modal_submit step; when opened from user_action, that step is 2 ahead)
-  const modalSubmitStep = isUserActionOpeningModal ? steps[stepIndex + 2] : steps[stepIndex + 1]
+  const modalSubmitStep =
+    isUserActionOpeningModal || isUserActionOpeningOAuthModal ? steps[stepIndex + 2] : steps[stepIndex + 1]
   const modalValues = modalSubmitStep?.type === 'modal_submit' ? (modalSubmitStep as any).content?.values : undefined
   const defaultStart = modalValues?.start ?? '2025-03-15'
   const defaultEnd = modalValues?.end ?? '2025-03-22'
-  const onModalSubmit = isUserActionOpeningModal ? () => { goNext(); goNext() } : goNext
+  const onModalSubmit =
+    isUserActionOpeningModal || isUserActionOpeningOAuthModal ? () => { goNext(); goNext() } : goNext
+
+  const oauthModalContent = (() => {
+    if (isUserActionOpeningOAuthModal && nextStep?.type === 'modal_open') {
+      return (nextStep as { content?: Record<string, unknown> }).content
+    }
+    if (currentStep?.type === 'modal_open' && (currentStep as any).content?.view === 'oauth-permission') {
+      return (currentStep as { content?: Record<string, unknown> }).content
+    }
+    return undefined
+  })()
 
   const renderPane = (view: ViewportView, state: typeof slackbotState, title: string) => {
     const isActive = activeView === view
@@ -153,7 +194,7 @@ export function StoryEngine({ story, personaConfig, onPersonaChange, fullStoryMo
         showThinking={isActive ? state.showThinking : false}
         thinkingStatusText={state.thinkingStatusText}
         onSend={isActive ? goNext : undefined}
-        onChoiceClick={isActive && hasPaneChoices ? handleChoiceClick : undefined}
+        onChoiceClick={isActive && hasPaneChoices && !isModalOpenStep ? handleChoiceClick : undefined}
       />
     )
   }
@@ -165,31 +206,61 @@ export function StoryEngine({ story, personaConfig, onPersonaChange, fullStoryMo
 
   return (
     <div className="flex flex-col w-full h-screen" style={{ backgroundColor: '#ffffff' }}>
-      <div className="flex-1 relative min-h-0 overflow-hidden flex flex-row">
+      <div
+        className="flex-1 relative min-h-0 w-full overflow-hidden flex flex-row gap-2 mt-0 mb-0 p-2"
+        style={{ backgroundColor: 'var(--slack-footer-bg)', border: 'none', width: '100%' }}
+      >
         {isSingle ? (
-          <div className="flex-1 min-w-0 min-h-0 flex flex-col" style={{ width: '100%' }}>
+          <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden rounded-2xl" style={{ width: '100%' }}>
             {singleView === 'slackbot' && renderPane('slackbot', slackbotState, 'Slackbot')}
             {singleView === 'channel' && renderPane('channel', channelState, channelName ?? '#channel')}
             {singleView === 'thread' && renderPane('thread', threadState, 'Thread')}
           </div>
         ) : (
           <>
-            <div className="flex flex-col min-h-0 min-w-0" style={{ flex: '0 0 60%' }}>
+            <div
+              className="flex flex-col min-h-0 min-w-0 overflow-hidden rounded-2xl box-border"
+              style={{ flex: '0 0 60%', border: '1px solid var(--slack-border)' }}
+            >
               {leftView === 'channel' && renderPane('channel', channelState, channelName ?? '#channel')}
               {leftView === 'thread' && renderPane('thread', threadState, 'Thread')}
             </div>
-            <div className="flex flex-col min-h-0 min-w-0" style={{ flex: '0 0 40%' }}>
+            <div
+              className="flex flex-col min-h-0 min-w-0 overflow-hidden rounded-2xl box-border"
+              style={{ flex: '0 0 40%' }}
+            >
               {rightView === 'slackbot' && renderPane('slackbot', slackbotState, 'Slackbot')}
               {rightView === 'thread' && renderPane('thread', threadState, 'Thread')}
             </div>
           </>
         )}
         {showOverlay && <ClickThroughOverlay onNext={goNext} onBack={goBack} enabled={overlayEnabled} />}
-        {isModalOpenStep && (
+        {isDatePickerModalView && (
           <DatePickerModal
             defaultStart={defaultStart}
             defaultEnd={defaultEnd}
             onSubmit={onModalSubmit}
+          />
+        )}
+        {isOAuthPermissionModalView && (
+          <OAuthPermissionModal
+            appName={(oauthModalContent?.oauthAppName as string) || undefined}
+            integrationName={(oauthModalContent?.oauthIntegrationName as string) || undefined}
+            modalTitle={(oauthModalContent?.oauthModalTitle as string) || undefined}
+            accountSectionLabel={(oauthModalContent?.oauthAccountSectionLabel as string) || undefined}
+            userDisplayName={(oauthModalContent?.oauthUserDisplayName as string) || undefined}
+            userEmail={(oauthModalContent?.oauthUserEmail as string) || undefined}
+            workspaceUrl={(oauthModalContent?.oauthWorkspaceUrl as string) || undefined}
+            accountBadge={(oauthModalContent?.oauthAccountBadge as string) || undefined}
+            integrationInitial={(oauthModalContent?.oauthIntegrationInitial as string) || undefined}
+            integrationLogoBg={(oauthModalContent?.oauthIntegrationLogoBg as string) || undefined}
+            integrationLogoUrl={(oauthModalContent?.oauthIntegrationLogoUrl as string) || undefined}
+            usageHeading={(oauthModalContent?.oauthUsageHeading as string) || undefined}
+            usageItems={parseOauthUsageItems(oauthModalContent?.oauthUsageItems)}
+            legalNotice={(oauthModalContent?.oauthLegalNotice as string) || undefined}
+            allowButtonLabel={(oauthModalContent?.oauthAllowButtonLabel as string) || undefined}
+            onAllow={onModalSubmit}
+            onCancel={goBack}
           />
         )}
       </div>
@@ -241,6 +312,8 @@ export interface ChatMessagePayload {
   text?: string
   timestamp?: string
   isApp?: boolean
+  /** User message avatar; from persona.avatar or stable defaults — same persona id = same photo */
+  avatarUrl?: string
   choices?: string[]
   templateId?: string
   templateContent?: Record<string, unknown>
@@ -260,12 +333,12 @@ function computeChatStateForView(
   lastSelectedChoice: string | null
 ): {
   chatMessages: ChatMessagePayload[]
-  pendingUserMessage: { text: string; author: string } | undefined
+  pendingUserMessage: { text: string; author: string; avatarUrl?: string } | undefined
   showThinking: boolean
   thinkingStatusText?: string
 } {
   const chatMessages: ChatMessagePayload[] = []
-  let pendingUserMessage: { text: string; author: string } | undefined
+  let pendingUserMessage: { text: string; author: string; avatarUrl?: string } | undefined
   let showThinking = false
   let thinkingStatusText: string | undefined
   const appPersona = personas.find((p) => p.type === 'app')
@@ -310,15 +383,22 @@ function computeChatStateForView(
       const text = content?.text ?? ''
       const timestamp = '12:32 PM'
       if (i === upToIndex) {
-        pendingUserMessage = { text, author }
+        pendingUserMessage = { text, author, avatarUrl: resolvePersonaAvatarUrl(persona) }
       } else {
-        chatMessages.push({ id: step.id, author, text, timestamp, isApp: false })
+        chatMessages.push({
+          id: step.id,
+          author,
+          text,
+          timestamp,
+          isApp: false,
+          avatarUrl: resolvePersonaAvatarUrl(persona),
+        })
       }
       continue
     }
 
     if (step.type === 'app_message') {
-      const msg = buildAppMessagePayload(step as any, steps, i, personas, lastSelectedChoice)
+      const msg = buildAppMessagePayload(step as any, steps, i, personas, lastSelectedChoice, upToIndex)
       lastChannelAppMessage = msg
       // Keep full channel history in both channel and thread views so earlier messages stay visible
       chatMessages.push(msg)
@@ -354,8 +434,18 @@ function computeChatStateForView(
           }
           const nextStepForAck = steps[i + 1]
           const opensDateModal = nextStepForAck?.type === 'modal_open' && (nextStepForAck as any).content?.view === 'date-picker'
+          const opensOAuthModal = nextStepForAck?.type === 'modal_open' && (nextStepForAck as any).content?.view === 'oauth-permission'
           const nextIsAppMessage = nextStepForAck?.type === 'app_message'
-          if (!opensDateModal && !nextIsAppMessage && i < upToIndex) {
+          const nextIsBotTyping = nextStepForAck?.type === 'bot_typing'
+          const suppressAck = Boolean(content?.suppressAcknowledgment)
+          if (
+            !opensDateModal &&
+            !opensOAuthModal &&
+            !nextIsAppMessage &&
+            !nextIsBotTyping &&
+            !suppressAck &&
+            i < upToIndex
+          ) {
             const choiceLabel = content?.choices?.[0]
             const acknowledgment = choiceLabel ? `Done! I've got your choice. One moment…` : "Got it! One moment…"
             chatMessages.push({
@@ -378,22 +468,40 @@ function computeChatStateForView(
             const values = content?.values ?? {}
             const start = values.start
             const end = values.end
-            let acknowledgment: string
+            const suppressAck = Boolean(content?.suppressAcknowledgment)
+            const prevOpen = steps[i - 1]
+            const prevWasOAuthModal =
+              prevOpen?.type === 'modal_open' && (prevOpen as any).content?.view === 'oauth-permission'
+            const nextIsBotContent =
+              nextStepAfterSubmit?.type === 'bot_typing' ||
+              nextStepAfterSubmit?.type === 'app_message' ||
+              nextStepAfterSubmit?.type === 'thread_reply'
+
             if (start && end && /^\d{4}-\d{2}-\d{2}$/.test(start) && /^\d{4}-\d{2}-\d{2}$/.test(end)) {
-              acknowledgment = `Thanks! I've got ${formatShortDate(start)}–${formatShortDate(end)}. I'll send this to your manager for approval.`
-            } else {
-              acknowledgment = "Thanks, I've got that. I'll take it from here."
+              const acknowledgment = `Thanks! I've got ${formatShortDate(start)}–${formatShortDate(end)}. I'll send this to your manager for approval.`
+              chatMessages.push({
+                id: `${step.id}-ack`,
+                author: slackbotName,
+                text: acknowledgment,
+                timestamp: 'Just now',
+                isApp: true,
+                templateId: 'plain_text',
+                templateContent: { text: acknowledgment, personaNames: personas.map((p) => p.name) },
+                personaNames: personas.map((p) => p.name),
+              })
+            } else if (!nextIsBotContent && !suppressAck && !prevWasOAuthModal) {
+              const acknowledgment = "Thanks, I've got that. I'll take it from here."
+              chatMessages.push({
+                id: `${step.id}-ack`,
+                author: slackbotName,
+                text: acknowledgment,
+                timestamp: 'Just now',
+                isApp: true,
+                templateId: 'plain_text',
+                templateContent: { text: acknowledgment, personaNames: personas.map((p) => p.name) },
+                personaNames: personas.map((p) => p.name),
+              })
             }
-            chatMessages.push({
-              id: `${step.id}-ack`,
-              author: slackbotName,
-              text: acknowledgment,
-              timestamp: 'Just now',
-              isApp: true,
-              templateId: 'plain_text',
-              templateContent: { text: acknowledgment, personaNames: personas.map((p) => p.name) },
-              personaNames: personas.map((p) => p.name),
-            })
           }
         }
       }
@@ -421,7 +529,8 @@ function buildAppMessagePayload(
   steps: StoryStep[],
   i: number,
   personas: StoryConfig['personas'],
-  lastSelectedChoice: string | null
+  lastSelectedChoice: string | null,
+  upToIndex: number
 ): ChatMessagePayload {
   const content = step.content
   const persona = personas.find((p) => p.id === content?.personaId) ?? personas.find((p) => p.type === 'app')
@@ -429,7 +538,7 @@ function buildAppMessagePayload(
   const prevStep = steps[i - 1]
   // Only show choices on this message if: (1) explicit on content, or (2) next step is user_action (buttons for that action).
   // Never inherit from prev step—that would re-show buttons on the reply after the user already clicked.
-  const choices =
+  let choices =
     content?.choices ??
     (nextStep?.type === 'user_action' ? (nextStep as any).content?.choices : undefined)
   const followsChoiceStep = prevStep?.type === 'user_action' && (prevStep as any).content?.choices?.length
@@ -437,16 +546,31 @@ function buildAppMessagePayload(
   const displayText = followsChoiceStep && rawText.includes('{{selectedChoice}}')
     ? rawText.replace(/\{\{selectedChoice\}\}/g, lastSelectedChoice ?? 'your selection')
     : rawText
+
+  const transitionAfterId = content?.oauthTransitionAfterStepId as string | undefined
+  let oauthConnected = false
+  if (transitionAfterId) {
+    const boundaryIdx = steps.findIndex((s) => s.id === transitionAfterId)
+    if (boundaryIdx >= 0 && upToIndex >= boundaryIdx) oauthConnected = true
+  }
+  if (oauthConnected) choices = undefined
+
   const templateContent: Record<string, unknown> = {
     text: displayText,
     choices: choices?.length ? choices : undefined,
     personaNames: personas.map((p) => p.name),
   }
+  if (oauthConnected) templateContent.oauthConnected = true
+  if (content?.connectConnectedTitle != null) templateContent.connectConnectedTitle = content.connectConnectedTitle
+  if (content?.connectConnectedBody != null) templateContent.connectConnectedBody = content.connectConnectedBody
   if (content?.caseTitle != null) templateContent.caseTitle = content.caseTitle
   if (content?.caseFields != null) templateContent.caseFields = content.caseFields
   if (content?.caseStatus != null) templateContent.caseStatus = content.caseStatus
   if (content?.caseNote != null) templateContent.caseNote = content.caseNote
   if (content?.caseAvatarUrl != null) templateContent.caseAvatarUrl = content.caseAvatarUrl
+  if (content?.connectCardTitle != null) templateContent.connectCardTitle = content.connectCardTitle
+  if (content?.connectCardBody != null) templateContent.connectCardBody = content.connectCardBody
+  if (content?.connectCardFooter != null) templateContent.connectCardFooter = content.connectCardFooter
   return {
     id: step.id,
     author: persona?.name ?? 'Slackbot',
@@ -488,12 +612,22 @@ function buildThreadReplyPayload(
     choices: hasChoices ? choices : undefined,
     personaNames: personas.map((p) => p.name),
   }
+  const tr = content as {
+    connectCardTitle?: string
+    connectCardBody?: string
+    connectCardFooter?: string
+  }
+  if (tr.connectCardTitle != null) templateContent.connectCardTitle = tr.connectCardTitle
+  if (tr.connectCardBody != null) templateContent.connectCardBody = tr.connectCardBody
+  if (tr.connectCardFooter != null) templateContent.connectCardFooter = tr.connectCardFooter
+  const isApp = content?.actor === 'app'
   return {
     id: step.id,
     author: persona?.name ?? 'Slackbot',
     text: displayText,
     timestamp: 'Just now',
-    isApp: content?.actor === 'app',
+    isApp,
+    avatarUrl: !isApp ? resolvePersonaAvatarUrl(persona) : undefined,
     choices: hasChoices ? choices : undefined,
     templateId: templateId ?? undefined,
     templateContent: templateId ? templateContent : undefined,

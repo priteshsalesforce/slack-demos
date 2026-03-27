@@ -1,0 +1,194 @@
+{
+  "id": "ai-platform-readiness-by-pritesh-chavan",
+  "title": "AI Platform Readiness",
+  "createdBy": "Pritesh Chavan",
+  "workspaceName": "Acme Inc",
+  "personas": [
+    {
+      "id": "marcus",
+      "name": "Marcus Lee",
+      "designation": "Engineering Manager",
+      "role": "Assesses team readiness and executes interventions from Slack",
+      "type": "user"
+    },
+    {
+      "id": "slackbot",
+      "name": "Employee Agent",
+      "avatar": "/assets/hr-service-agent-avatar.png",
+      "designation": "Agentforce",
+      "role": "Aggregates Salesforce and Cornerstone signals, recommends and executes readiness actions",
+      "type": "app"
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "type": "surface",
+      "context": { "surface": "dm", "with": "Employee Agent" }
+    },
+    {
+      "id": "step-2",
+      "type": "user_message",
+      "content": {
+        "text": "Is my team ready for the upcoming AI platform rollout?",
+        "personaId": "marcus"
+      }
+    },
+    {
+      "id": "step-3",
+      "type": "bot_typing",
+      "content": {
+        "duration": 1,
+        "statusText": "Analyzing skills, learning progress, and compliance signals..."
+      }
+    },
+    {
+      "id": "step-4",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "text_with_buttons",
+        "text": "I've analyzed your team across Salesforce and Cornerstone.\n\n*Team readiness snapshot*\n• Ready: 3 engineers\n• At-risk: 4 engineers\n• Not ready: 2 engineers\n\nYour team is partially ready for the AI platform rollout.\n\nChoose an action below to continue.",
+        "choices": ["Show breakdown"]
+      }
+    },
+    {
+      "id": "step-5",
+      "type": "user_action",
+      "content": {
+        "action": "show_breakdown",
+        "trigger": "button",
+        "personaId": "marcus",
+        "choices": ["Show breakdown"]
+      }
+    },
+    {
+      "id": "step-6",
+      "type": "modal_open",
+      "content": { "view": "team-readiness-breakdown" }
+    },
+    {
+      "id": "step-7",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "text_with_buttons",
+        "text": "I've noticed a few high-impact gaps you can close quickly.\n\n*Top skill gaps*\n• Model deployment workflows\n• AI system monitoring\n• Data pipeline debugging\n\n*Compliance risk*\n• 2 engineers are missing AI governance training\n\nYou can take action now and I can orchestrate it for you.\n\nChoose an action below to continue.",
+        "choices": [
+          "Assign learning for at-risk engineers",
+          "Send reminder for compliance",
+          "View individuals"
+        ]
+      }
+    },
+    {
+      "id": "step-8",
+      "type": "user_action",
+      "content": {
+        "action": "execute_recommended_actions",
+        "trigger": "button",
+        "personaId": "marcus",
+        "choices": [
+          "Assign learning for at-risk engineers",
+          "Send reminder for compliance"
+        ]
+      }
+    },
+    {
+      "id": "step-9",
+      "type": "bot_typing",
+      "content": {
+        "duration": 1,
+        "statusText": "Assigning learning and notifying compliance-risk employees..."
+      }
+    },
+    {
+      "id": "step-10",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "text_with_buttons",
+        "text": "I've handled the actions.\n\n• Learning assigned to 4 at-risk engineers\n• Compliance reminders sent to 2 engineers\n• Progress tracking is now active for this rollout\n\nChoose an action below to continue.",
+        "choices": ["View individuals"]
+      }
+    },
+    {
+      "id": "step-11",
+      "type": "user_action",
+      "content": {
+        "action": "view_individuals",
+        "trigger": "button",
+        "personaId": "marcus",
+        "choices": ["View individuals"]
+      }
+    },
+    {
+      "id": "step-12",
+      "type": "modal_open",
+      "content": { "view": "individual-readiness-details" }
+    },
+    {
+      "id": "step-13",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "plain_text",
+        "text": "*Individual readiness view opened*\n\nYou can now review:\n• Readiness score by engineer\n• Skill gaps per person\n• Learning completion progress\n• Suggested mentors"
+      }
+    },
+    {
+      "id": "step-14",
+      "type": "bot_typing",
+      "content": {
+        "duration": 1,
+        "statusText": "2 days later..."
+      }
+    },
+    {
+      "id": "step-15",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "text_with_buttons",
+        "text": "Update on your team readiness:\n\n• 2 engineers improved to *Ready*\n• 1 compliance task completed\n• 1 engineer is still at risk\n\nWant me to follow up with them?\n\nChoose an action below to continue.",
+        "choices": ["Nudge them"]
+      }
+    },
+    {
+      "id": "step-16",
+      "type": "user_action",
+      "content": {
+        "action": "nudge_remaining_at_risk_engineer",
+        "trigger": "button",
+        "personaId": "marcus",
+        "choices": ["Nudge them"]
+      }
+    },
+    {
+      "id": "step-17",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "plain_text",
+        "text": "I've handled the follow-up.\n\n• Reminder sent to the remaining at-risk engineer\n• Their manager received a suggested mentor pairing prompt\n• I'll continue monitoring progress and notify you of movement"
+      }
+    },
+    {
+      "id": "step-18",
+      "type": "bot_typing",
+      "content": {
+        "duration": 1,
+        "statusText": "End-of-week update..."
+      }
+    },
+    {
+      "id": "step-19",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "plain_text",
+        "text": "Your team is now *80% ready* for the AI platform rollout.\n\n• 1 engineer still needs support\n• Recommendation: pair them with a mentor this week to de-risk launch readiness"
+      }
+    }
+  ]
+}

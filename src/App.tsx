@@ -6,6 +6,7 @@ import { DemoPage } from '@/pages/demo/DemoPage'
 import { SlackbotTemplatesPage } from '@/pages/slackbot-templates/SlackbotTemplatesPage'
 import { FoundationDesignSystemPage } from '@/pages/design-system/FoundationDesignSystemPage'
 import { ViewHeadersDesignPage } from '@/pages/view-headers/ViewHeadersDesignPage'
+import { HowIBuildThisProjectPage } from '@/pages/how-i-built/HowIBuildThisProjectPage'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path="/reference" element={<ReferencePage />} />
       <Route path="/slackbot-templates" element={<SlackbotTemplatesPage />} />
       <Route path="/design-system" element={<FoundationDesignSystemPage />} />
+      <Route path="/how-i-built-this-project" element={<HowIBuildThisProjectPage />} />
       <Route path="/view-headers" element={<ViewHeadersDesignPage />} />
       <Route path="/demo/:storyId/:personaId" element={<DemoPage />} />
       <Route path="/demo/:storyId" element={<DemoPage />} />

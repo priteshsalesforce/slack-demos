@@ -44,7 +44,7 @@ export function FoundationDesignSystemPage() {
         >
           ← Back
         </Link>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           <Link
             to="/slackbot-templates"
             className="inline-flex items-center justify-center px-3 py-1.5 rounded text-sm font-semibold border transition hover:bg-[var(--slack-btn-hover-bg)]"
@@ -66,6 +66,17 @@ export function FoundationDesignSystemPage() {
             }}
           >
             View headers
+          </Link>
+          <Link
+            to="/how-i-built-this-project"
+            className="inline-flex items-center justify-center px-3 py-1.5 rounded text-sm font-semibold border transition hover:bg-[var(--slack-btn-hover-bg)]"
+            style={{
+              backgroundColor: 'var(--slack-btn-bg)',
+              color: 'var(--slack-text)',
+              borderColor: 'var(--slack-btn-secondary-border)',
+            }}
+          >
+            How I build this project
           </Link>
         </div>
       </header>

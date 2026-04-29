@@ -7,22 +7,22 @@
     {
       "id": "alex",
       "name": "Alex Kim",
-      "designation": "Employee",
-      "role": "Replies in #team-leave, applies for paternity leave in Slackbot, receives approval confirmation",
+      "designation": "Senior Developer",
+      "role": "Requests paternity leave and receives approval confirmation",
       "type": "user"
     },
     {
       "id": "sarah",
       "name": "Sarah Chen",
-      "designation": "Manager",
-      "role": "Asks about team leave in-channel; approves Alex's request in Slackbot",
+      "designation": "Engineering Manager",
+      "role": "Reviews and approves Alex's paternity leave request",
       "type": "user"
     },
     {
       "id": "slackbot",
       "name": "Slackbot",
       "designation": "App",
-      "role": "Explains policy, collects dates, routes approval to Sarah, confirms outcomes",
+      "role": "Guides paternity leave requests, enforces policy, and routes approvals",
       "type": "app"
     }
   ],
@@ -31,139 +31,82 @@
       "id": "step-1",
       "type": "surface",
       "context": {
-        "surface": "channel",
-        "channel": "#team-leave"
-      }
-    },
-    {
-      "id": "step-2",
-      "type": "thread_reply",
-      "content": {
-        "actor": "user",
-        "personaId": "sarah",
-        "text": "Who's taking leave this month?"
-      }
-    },
-    {
-      "id": "step-3",
-      "type": "thread_reply",
-      "content": {
-        "actor": "user",
-        "personaId": "alex",
-        "text": "I'd like to take leave."
-      }
-    },
-    {
-      "id": "step-4",
-      "type": "surface",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
-      "context": {
         "surface": "dm",
         "with": "Slackbot"
       }
     },
     {
-      "id": "step-5",
+      "id": "step-2",
       "type": "user_message",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
       "content": {
         "text": "I want to apply for paternity leave.",
         "personaId": "alex"
       }
     },
     {
-      "id": "step-6",
+      "id": "step-3",
       "type": "bot_typing",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
       "content": {
         "duration": 1,
-        "statusText": "Pulling your leave policy and routing rules…"
+        "statusText": "Looking up paternity leave policy..."
+      }
+    },
+    {
+      "id": "step-4",
+      "type": "app_message",
+      "content": {
+        "personaId": "slackbot",
+        "templateId": "text_with_buttons",
+        "text": "Congrats, Alex! :baby: Here's what you need to know.\n\n*Acme Inc Paternity Leave Policy*\n\u2022 Eligible employees receive *2 weeks* of fully paid paternity leave\n\u2022 Leave must be taken within 12 weeks of the child's birth or adoption\n\u2022 Manager approval is required before leave begins\n\nWhen you're ready, choose your dates and I'll route the request to Sarah for approval.\n\nChoose an action below to continue.",
+        "choices": ["Choose Dates"]
+      }
+    },
+    {
+      "id": "step-5",
+      "type": "user_action",
+      "content": {
+        "action": "choose_dates",
+        "trigger": "button",
+        "personaId": "alex",
+        "choices": ["Choose Dates"]
+      }
+    },
+    {
+      "id": "step-6",
+      "type": "modal_open",
+      "content": {
+        "view": "date_picker",
+        "modalTitle": "Select Leave Dates",
+        "modalFields": [
+          { "label": "Start Date", "value": "March 15, 2026" },
+          { "label": "End Date", "value": "March 22, 2026" }
+        ]
       }
     },
     {
       "id": "step-7",
-      "type": "app_message",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
-      "content": {
-        "personaId": "slackbot",
-        "templateId": "text_with_buttons",
-        "text": "I've noticed you're planning a life event—congrats, Alex.\n\n*Paternity leave in your workspace*\n\u2022 Up to 2 weeks paid once approved\n\u2022 Your manager (Sarah Chen) approves in Slack\n\u2022 I'll sync dates with HR systems after approval\n\nWhen you're ready, lock in your dates and I'll route the request.\n\nChoose an action below to continue.",
-        "choices": ["Choose dates"]
-      }
+      "type": "modal_submit",
+      "content": {}
     },
     {
       "id": "step-8",
-      "type": "user_action",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
+      "type": "bot_typing",
       "content": {
-        "action": "open_leave_dates",
-        "trigger": "button",
-        "personaId": "alex",
-        "choices": ["Choose dates"]
+        "duration": 1,
+        "statusText": "Submitting your leave request..."
       }
     },
     {
       "id": "step-9",
-      "type": "modal_open",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
+      "type": "app_message",
       "content": {
-        "view": "date-picker"
+        "personaId": "slackbot",
+        "templateId": "plain_text",
+        "text": "All set! I've submitted your paternity leave request.\n\n*Request summary*\n\u2022 Type: Paternity Leave\n\u2022 Dates: March 15 \u2013 22, 2026\n\u2022 Duration: 5 business days\n\u2022 Approver: Sarah Chen\n\nSarah will be notified shortly. I'll let you know as soon as she responds."
       }
     },
     {
       "id": "step-10",
-      "type": "modal_submit",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
-      "content": {
-        "values": {
-          "start": "2026-03-15",
-          "end": "2026-03-22"
-        }
-      }
-    },
-    {
-      "id": "step-10a",
-      "type": "bot_typing",
-      "viewport": {
-        "mode": "dual",
-        "left": "channel",
-        "right": "slackbot"
-      },
-      "content": {
-        "duration": 1,
-        "statusText": "Routing the request to Sarah…"
-      }
-    },
-    {
-      "id": "step-11",
       "type": "surface",
       "viewport": {
         "mode": "single",
@@ -176,23 +119,39 @@
       }
     },
     {
-      "id": "step-12",
+      "id": "step-11",
       "type": "app_message",
+      "viewport": {
+        "mode": "single",
+        "view": "slackbot"
+      },
       "content": {
         "personaId": "slackbot",
         "templateId": "text_with_buttons",
-        "text": "Hi Sarah—Alex Kim has requested *paternity leave*.\n\n*Request summary*\n\u2022 Dates: March 15\u201322, 2026\n\u2022 Type: Paternity\n\u2022 Routed from your team's #team-leave context\n\nYou can approve or reject here; I'll close the loop with Alex automatically.\n\nChoose an action below to continue.",
+        "text": "Alex Kim has requested *paternity leave*.\n\n*Request details*\n\u2022 Dates: March 15 \u2013 22, 2026\n\u2022 Duration: 5 business days\n\u2022 Policy check: Eligible :white_check_mark:\n\nPlease review and take action below.\n\nChoose an action below to continue.",
         "choices": ["Approve", "Reject"]
       }
     },
     {
-      "id": "step-13",
+      "id": "step-12",
       "type": "user_action",
+      "viewport": {
+        "mode": "single",
+        "view": "slackbot"
+      },
       "content": {
-        "action": "approve_paternity_leave",
+        "action": "approve_leave",
         "trigger": "button",
         "personaId": "sarah",
         "choices": ["Approve"]
+      }
+    },
+    {
+      "id": "step-13",
+      "type": "bot_typing",
+      "content": {
+        "duration": 1,
+        "statusText": "Recording approval and notifying Alex..."
       }
     },
     {
@@ -201,16 +160,19 @@
       "content": {
         "personaId": "slackbot",
         "templateId": "plain_text",
-        "text": "I've handled the notification—Alex knows you've approved.\n\n*What I've done in your workspace*\n\u2022 Recorded your approval on the leave case\n\u2022 Messaged Alex with the confirmed dates\n\u2022 Queued HR calendar updates for March 15\u201322\n\nThanks for the quick turnaround."
+        "text": "Done! I've recorded the approval and notified Alex.\n\n*What I've handled*\n\u2022 Leave status updated to *Approved*\n\u2022 Alex has been informed via DM\n\u2022 Calendar hold created for March 15 \u2013 22\n\nNo further action needed on your end, Sarah."
       }
     },
     {
       "id": "step-15",
       "type": "surface",
+      "viewport": {
+        "mode": "single",
+        "view": "slackbot"
+      },
       "context": {
         "surface": "dm",
         "with": "Slackbot",
-        "personaId": "alex",
         "resetConversation": true
       }
     },
@@ -220,7 +182,7 @@
       "content": {
         "personaId": "slackbot",
         "templateId": "plain_text",
-        "text": "Great news, Alex!\n\n*Your leave is approved*\n\u2022 Dates: March 15\u201322, 2026\n\u2022 Sarah Chen signed off—I've updated your case\n\nYou're all set. If anything shifts, just ping me here and I'll re-orchestrate with HR."
+        "text": "Great news, Alex! :tada:\n\nSarah approved your paternity leave request. You're all set for *March 15 \u2013 22, 2026*.\n\n*What I've handled*\n\u2022 Leave marked as approved in your workspace\n\u2022 Your calendar has been blocked\n\u2022 Out-of-office status will activate automatically on March 15\n\nEnjoy every moment \u2014 you've earned it!"
       }
     }
   ]

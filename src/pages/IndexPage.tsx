@@ -216,12 +216,21 @@ export function IndexPage() {
                 </Link>
                 <Link
                   to="/design-system"
-                  className="block w-full px-4 py-3 text-left text-sm font-semibold transition hover:bg-[var(--slack-msg-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--slack-avatar-bg)] rounded-b-lg"
+                  className="block w-full px-4 py-3 text-left text-sm font-semibold transition hover:bg-[var(--slack-msg-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--slack-avatar-bg)]"
                   style={{ color: 'var(--slack-text)' }}
                   role="menuitem"
                   onClick={() => setMoreOptionsOpen(false)}
                 >
                   Design system
+                </Link>
+                <Link
+                  to="/how-i-built-this-project"
+                  className="block w-full px-4 py-3 text-left text-sm font-semibold transition hover:bg-[var(--slack-msg-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--slack-avatar-bg)] rounded-b-lg"
+                  style={{ color: 'var(--slack-text)' }}
+                  role="menuitem"
+                  onClick={() => setMoreOptionsOpen(false)}
+                >
+                  How I build this project
                 </Link>
               </div>
             )}

@@ -33,6 +33,13 @@ function persistHiddenDemoIds(hiddenIds: Set<string>) {
   window.localStorage.setItem(HIDDEN_DEMOS_STORAGE_KEY, JSON.stringify(Array.from(hiddenIds)))
 }
 
+/** Demos hidden on this device (Delete on home) among stories that still exist in the app bundle. */
+function countHiddenBundledDemos(): number {
+  const hiddenIds = loadHiddenDemoIds()
+  if (hiddenIds.size === 0) return 0
+  return getStories().filter((s) => hiddenIds.has(s.id)).length
+}
+
 export function IndexPage() {
   const [stories, setStories] = useState(() => {
     const hiddenIds = loadHiddenDemoIds()
@@ -45,6 +52,12 @@ export function IndexPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null)
   const moreOptionsRef = useRef<HTMLDivElement>(null)
   const shareToastTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
+
+  function restoreHiddenDemos() {
+    if (typeof window === 'undefined') return
+    window.localStorage.removeItem(HIDDEN_DEMOS_STORAGE_KEY)
+    setStories(getStories())
+  }
 
   function showShareCopiedToast() {
     if (shareToastTimeoutRef.current) {
@@ -239,6 +252,28 @@ export function IndexPage() {
       </section>
 
       {/* Demos section */}
+      {getStories().length > 0 && stories.length === 0 && (
+        <section className="flex-1 px-6 lg:px-12 pb-8">
+          <div
+            className="max-w-4xl mx-auto rounded-lg border p-6 text-center"
+            style={{
+              backgroundColor: 'var(--slack-pane-bg)',
+              borderColor: 'var(--slack-border)',
+              color: 'var(--slack-text)',
+            }}
+          >
+            <p className="font-semibold mb-2">All demos are hidden on this browser</p>
+            <p className="text-sm mb-4" style={{ color: 'var(--slack-msg-muted)' }}>
+              Using <strong>Delete</strong> on a demo card only hides it here (local storage). Nothing is removed from
+              the deployed app.
+            </p>
+            <SecondaryButton type="button" onClick={restoreHiddenDemos}>
+              Show all demos again
+            </SecondaryButton>
+          </div>
+        </section>
+      )}
+
       {stories.length > 0 && (
         <section className="flex-1 px-6 lg:px-12 pb-20">
           <div className="max-w-4xl mx-auto">
@@ -248,6 +283,24 @@ export function IndexPage() {
             >
               My Demos
             </h2>
+            {countHiddenBundledDemos() > 0 && (
+              <div
+                className="mb-6 rounded-lg border px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                style={{
+                  backgroundColor: 'var(--slack-mention-bg)',
+                  borderColor: 'var(--slack-border)',
+                }}
+              >
+                <p className="text-sm" style={{ color: 'var(--slack-text)' }}>
+                  {countHiddenBundledDemos()} demo
+                  {countHiddenBundledDemos() === 1 ? ' is' : 's are'} hidden on this device (e.g. after Delete).{' '}
+                  <span className="hidden sm:inline">Restore them to see every demo again.</span>
+                </p>
+                <SecondaryButton type="button" className="shrink-0 self-start sm:self-auto" onClick={restoreHiddenDemos}>
+                  Show hidden demos
+                </SecondaryButton>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               {[...stories]
                 .reverse()
